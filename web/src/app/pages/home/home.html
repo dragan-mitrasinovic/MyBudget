@@ -1,0 +1,8 @@
+@if (user(); as u) {
+  <div class="home">
+    <img class="avatar" [src]="u.picture" [alt]="u.name" referrerpolicy="no-referrer" />
+    <h1>Hello, {{ u.name }}</h1>
+    <p>{{ u.email }}</p>
+    <button type="button" (click)="logout()">Log out</button>
+  </div>
+}

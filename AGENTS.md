@@ -15,3 +15,10 @@ Decision Records) in `docs/adr/` — one Markdown file per decision.
 alternatives considered, and consequences. Decisions are immutable: to change or reverse
 one, add a new ADR and mark the old one `Superseded by ADR-NNNN` — don't edit or delete
 the original.
+
+## Coding conventions
+
+Language-specific coding conventions live in per-folder `AGENTS.md` files next to the
+code they govern — e.g. [`server/AGENTS.md`](server/AGENTS.md) for Go. Add new
+conventions to the relevant folder's file (create `web/AGENTS.md` for Angular/TypeScript
+when the need arises).
