@@ -5,6 +5,13 @@ friends, so it is multi-user from the start. The web client is an Angular + Angu
 Material single-page app; a Go HTTP API (`server/`) and a future mobile client are
 planned. See `docs/adr/` for the decisions behind these choices.
 
+## Tasks
+
+The task backlog lives in [`TODO.md`](TODO.md) at the repo root — a single Markdown file
+with **Inbox**, **In progress**, **Done**, and **Someday / maybe** sections. Capture new
+ideas under Inbox, move them along as work happens, and check items off (with a date under
+Done) when finished. Keep it current as part of doing the work.
+
 ## Architecture decisions
 
 Significant architectural and tech-stack decisions are recorded as ADRs (Architecture
