@@ -1,0 +1,23 @@
+# Pre-commit quality gate — works with or without an agent. See ADR-0008.
+# Install once per clone:  lefthook install
+pre-commit:
+  parallel: true
+  commands:
+    web-format:
+      root: "web/"
+      glob: "*.{ts,html,scss,json,md}"
+      run: npx --no-install prettier --write {staged_files}
+      stage_fixed: true
+    web-lint:
+      root: "web/"
+      glob: "*.ts"
+      run: npx --no-install eslint {staged_files}
+    go-format:
+      root: "server/"
+      glob: "*.go"
+      run: gofmt -w {staged_files}
+      stage_fixed: true
+    go-lint:
+      root: "server/"
+      glob: "*.go"
+      run: golangci-lint run

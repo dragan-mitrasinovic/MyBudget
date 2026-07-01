@@ -1,0 +1,12 @@
+# golangci-lint v2 — deliberately minimal starter set. See ADR-0008 and server/AGENTS.md.
+# Add a linter only when it catches a class of bug worth the noise.
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck # unchecked errors
+    - govet # suspicious constructs (also runnable via `go vet`)
+    - ineffassign # assignments that are never used
+    - staticcheck # bugs, simplifications, deprecations (subsumes gosimple/stylecheck)
+    - unused # unused code

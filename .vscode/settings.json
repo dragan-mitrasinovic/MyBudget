@@ -1,0 +1,14 @@
+{
+  // Format on save with Prettier (web) and gofmt via the Go extension (server). See ADR-0008.
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.formatOnSave": true
+  },
+  "go.lintTool": "golangci-lint",
+  "go.lintOnSave": "package"
+}

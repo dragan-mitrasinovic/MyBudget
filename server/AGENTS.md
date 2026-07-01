@@ -19,3 +19,13 @@ Conventions for this folder, applied on top of `gofmt`:
 
   port := getenv("PORT", "8080")
   ```
+
+## Tooling
+
+Run from `server/` (or `make lint` / `make vet` from the repo root). See ADR-0008.
+
+- `gofmt -w .` — formatting. The blank-line rule above is house style layered on top.
+- `go vet ./...` — built-in correctness checks.
+- `golangci-lint run` — meta-linter with a minimal starter set (`govet`, `staticcheck`,
+  `errcheck`, `ineffassign`, `unused`) configured in [`.golangci.yml`](../.golangci.yml).
+  Add linters only when they earn their keep.
