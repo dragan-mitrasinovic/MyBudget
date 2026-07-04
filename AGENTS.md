@@ -44,3 +44,23 @@ of truth) and enforced in layers — editor, agent hook, and a lefthook pre-comm
 
 First-time setup per clone: install the tools (`golangci-lint`, `lefthook`, plus the web
 deps via `npm ci`) and run `lefthook install` so the commit hook is active.
+
+## Running & verifying locally
+
+Two processes, then open http://localhost:4200:
+
+- `make dev-api` — the Go API on :8080, **with the dev-only dummy-login route** (`DEV_AUTH=true`).
+- `make dev-web` — the Angular dev server, which proxies `/api` to the API.
+
+**Signing in without Google (dummy user).** The app is behind Google sign-in (ADR-0006), which
+can't be completed headlessly. With `make dev-api` running, mint a session for a fixed **Dev
+User** by visiting `http://localhost:4200/api/dev/login` once, then open
+`http://localhost:4200/`. This shortcut is enabled only by `DEV_AUTH=true` (which `make
+dev-api` sets); the server refuses to start with it in a production config — see
+[ADR-0010](docs/adr/0010-dev-dummy-user-login.md).
+
+**Check UI work in the browser.** A green build and green lint don't prove a screen *looks*
+right. After a UI change, open the affected page, read its accessibility snapshot
+(structure/interaction) and take a screenshot (layout/spacing/theme), and fix what you see —
+overlap, overflow, off-theme colours, broken images. This catches *broken*; taste and
+aesthetics still need a human eye.

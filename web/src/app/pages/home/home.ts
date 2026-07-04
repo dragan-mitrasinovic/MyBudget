@@ -1,11 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { SocialAuthService } from '@abacritt/angularx-social-login';
 
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-home',
+  imports: [MatCardModule, MatButtonModule],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })

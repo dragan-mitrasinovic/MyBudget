@@ -1,0 +1,23 @@
+/*
+ * App-level design tokens, layered on top of Angular Material 3's system
+ * variables (the `--mat-sys-*` custom properties defined by `mat.theme()` in
+ * `styles.scss`). Material owns color, typography, shape, and elevation; this
+ * file adds only what Material doesn't provide — a consistent spacing scale.
+ *
+ * Use tokens everywhere in component styles; never hardcode colors or spacing
+ * (enforced by stylelint, `npm run lint:css`). See ADR-0009.
+ *
+ *   Color   -> var(--mat-sys-primary), var(--mat-sys-error), var(--mat-sys-surface), ...
+ *   Spacing -> var(--space-1 .. --space-8)
+ */
+
+:root {
+  // Spacing scale on a 4px base: 4, 8, 12, 16, 24, 32, 48px.
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+}

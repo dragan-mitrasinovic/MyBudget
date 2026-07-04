@@ -12,6 +12,10 @@ pre-commit:
       root: "web/"
       glob: "*.ts"
       run: npx --no-install eslint {staged_files}
+    web-lint-css:
+      root: "web/"
+      glob: "*.scss"
+      run: npx --no-install stylelint {staged_files}
     go-format:
       root: "server/"
       glob: "*.go"

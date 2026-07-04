@@ -1,15 +1,19 @@
 <div class="login">
-  <h1>MyBudget</h1>
-  <p>Sign in to continue</p>
+  <mat-card class="login-card" appearance="outlined">
+    <mat-card-content class="login-content">
+      <h1>MyBudget</h1>
+      <p>Sign in to continue</p>
 
-  <asl-google-signin-button
-    type="standard"
-    size="large"
-    text="continue_with"
-    shape="pill"
-  ></asl-google-signin-button>
+      <asl-google-signin-button
+        type="standard"
+        size="large"
+        text="continue_with"
+        shape="pill"
+      ></asl-google-signin-button>
 
-  @if (error(); as message) {
-    <p class="error">{{ message }}</p>
-  }
+      @if (error(); as message) {
+        <p class="login-error">{{ message }}</p>
+      }
+    </mat-card-content>
+  </mat-card>
 </div>

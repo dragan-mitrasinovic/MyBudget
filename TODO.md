@@ -16,6 +16,8 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Dev dummy-user login (`DEV_AUTH` flag) + in-browser verification workflow for agents (2026-07-02)
+- [x] Design system foundation: tokens, Material-first pages, stylelint design lint (2026-07-02)
 - [x] Code-quality tooling: Prettier/ESLint, golangci-lint, lefthook, Makefile (2026-07-01)
 - [x] Google sign-in: Go HTTP API, Angular auth, monorepo split (2026-07-01)
 - [x] Architecture decision records and agent guide (2026-06-29)
@@ -24,4 +26,5 @@ _Unsorted, capture-anything. Groom later._
 ## Someday / maybe
 _Parked ideas, not committed to._
 
-- [ ] (nothing yet)
+- [ ] Storybook component catalog + visual-regression testing (Chromatic / Playwright), once
+      there are enough reusable components to justify it

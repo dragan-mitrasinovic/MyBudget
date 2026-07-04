@@ -17,6 +17,13 @@ func main() {
 	dbPath := getenv("DB_PATH", "./mybudget.db")
 	secureCookies := getenv("SECURE_COOKIES", "false") == "true"
 	sessionTTL := parseTTL(getenv("SESSION_TTL", "720h"))
+	devAuth := getenv("DEV_AUTH", "false") == "true"
+
+	// The dummy-login shortcut is a full auth bypass; never let it run in a production
+	// configuration. SECURE_COOKIES=true is our signal for "this is production".
+	if devAuth && secureCookies {
+		log.Fatal("DEV_AUTH must not be enabled with SECURE_COOKIES=true")
+	}
 
 	store, err := OpenStore(dbPath)
 	if err != nil {
@@ -34,6 +41,14 @@ func main() {
 	mux.HandleFunc("POST /api/auth/google", srv.handleGoogleLogin)
 	mux.HandleFunc("GET /api/me", srv.handleMe)
 	mux.HandleFunc("POST /api/auth/logout", srv.handleLogout)
+
+	// Dev-only dummy-login shortcut (see ADR-0010), enabled with DEV_AUTH=true so that
+	// local and automated testing can reach authenticated screens without Google sign-in.
+	if devAuth {
+		log.Println("⚠  DEV AUTH ENABLED — /api/dev/login mints a session for a dummy user")
+		mux.HandleFunc("POST /api/dev/login", srv.handleDevLogin)
+		mux.HandleFunc("GET /api/dev/login", srv.handleDevLogin)
+	}
 
 	addr := ":" + port
 	log.Printf("MyBudget API listening on %s (db=%s, secureCookies=%v)", addr, dbPath, secureCookies)

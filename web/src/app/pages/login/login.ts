@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
 import { GoogleSigninButtonDirective, SocialAuthService } from '@abacritt/angularx-social-login';
 import { Subscription } from 'rxjs';
 
@@ -7,7 +8,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [GoogleSigninButtonDirective],
+  imports: [GoogleSigninButtonDirective, MatCardModule],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
