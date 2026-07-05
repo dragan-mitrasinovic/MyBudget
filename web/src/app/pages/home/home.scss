@@ -1,26 +1,39 @@
-.home {
-  min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4);
-}
-
-.home-card {
-  width: 100%;
-  max-width: 360px;
-}
-
-.home-content {
+:host {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  text-align: center;
+  height: 100dvh;
 }
 
-.avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
+.app-bar {
+  // M3 dropped the `color="primary"` toolbar input; theme it via system tokens.
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+
+  // The icon button carries its own icon-colour token, which otherwise stays a
+  // dark neutral — align it with the bar so the logout icon reads on primary.
+  --mat-icon-button-icon-color: var(--mat-sys-on-primary);
+}
+
+.app-name {
+  font: var(--mat-sys-title-large);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.shell {
+  flex: 1;
+}
+
+.side-nav {
+  width: 240px;
+
+  // Give the empty nav rail a distinct surface tone so it reads as a panel,
+  // not blank space (Material's default drawer border is transparent here).
+  background: var(--mat-sys-surface-container);
+}
+
+.content {
+  padding: var(--space-5);
 }

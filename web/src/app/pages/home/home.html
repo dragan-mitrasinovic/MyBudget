@@ -1,12 +1,21 @@
 @if (user(); as u) {
-  <div class="home">
-    <mat-card class="home-card" appearance="outlined">
-      <mat-card-content class="home-content">
-        <img class="avatar" [src]="u.picture" [alt]="u.name" referrerpolicy="no-referrer" />
-        <h1>Hello, {{ u.name }}</h1>
-        <p>{{ u.email }}</p>
-        <button mat-flat-button type="button" (click)="logout()">Log out</button>
-      </mat-card-content>
-    </mat-card>
-  </div>
+  <mat-toolbar class="app-bar">
+    <span class="app-name">MyBudget</span>
+    <span class="spacer"></span>
+    <button mat-icon-button type="button" aria-label="Log out" (click)="logout()">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <mat-sidenav-container class="shell">
+    <mat-sidenav class="side-nav" mode="side" opened>
+      <mat-nav-list>
+        <!-- Navigation menus go here later -->
+      </mat-nav-list>
+    </mat-sidenav>
+
+    <mat-sidenav-content class="content">
+      <!-- Home content goes here later -->
+    </mat-sidenav-content>
+  </mat-sidenav-container>
 }

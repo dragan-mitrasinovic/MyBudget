@@ -1,14 +1,17 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { SocialAuthService } from '@abacritt/angularx-social-login';
 
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-home',
-  imports: [MatCardModule, MatButtonModule],
+  imports: [MatButtonModule, MatIconModule, MatListModule, MatSidenavModule, MatToolbarModule],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })

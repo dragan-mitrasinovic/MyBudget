@@ -16,6 +16,7 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Home page app shell: top bar (app name + log out) and left sidenav for future menus (2026-07-04)
 - [x] Dev dummy-user login (`DEV_AUTH` flag) + in-browser verification workflow for agents (2026-07-02)
 - [x] Design system foundation: tokens, Material-first pages, stylelint design lint (2026-07-02)
 - [x] Code-quality tooling: Prettier/ESLint, golangci-lint, lefthook, Makefile (2026-07-01)
