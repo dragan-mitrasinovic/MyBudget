@@ -10,7 +10,19 @@ export const routes: Routes = [
   {
     path: '',
     canActivate: [authGuard],
-    loadComponent: () => import('./pages/home/home').then((m) => m.Home),
+    loadComponent: () => import('./core/shell/shell').then((m) => m.Shell),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'budgets' },
+      {
+        path: 'budgets',
+        loadComponent: () => import('./pages/budgets/budgets').then((m) => m.Budgets),
+      },
+      {
+        path: 'budgets/:id',
+        loadComponent: () =>
+          import('./pages/budgets/budget-detail/budget-detail').then((m) => m.BudgetDetail),
+      },
+    ],
   },
   { path: '**', redirectTo: '' },
 ];

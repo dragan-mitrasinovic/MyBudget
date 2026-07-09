@@ -29,8 +29,7 @@
 .side-nav {
   width: 240px;
 
-  // Give the empty nav rail a distinct surface tone so it reads as a panel,
-  // not blank space (Material's default drawer border is transparent here).
+  // Give the nav rail a distinct surface tone so it reads as a panel.
   background: var(--mat-sys-surface-container);
 }
 

@@ -6,13 +6,22 @@ items off as you finish them. Big architectural or tech-stack decisions belong i
 ADR (`docs/adr/`), not here — this file is "what to do," ADRs are "why we chose how."
 
 ## Inbox
+
 _Unsorted, capture-anything. Groom later._
 
 - [ ] (nothing yet)
 
 ## In progress
 
-- [ ] (nothing yet)
+- [ ] Budgets feature — users create budgets and track expenses in custom categories, with a
+      per-budget currency and a permanent Uncategorized category. See
+      [ADR-0011](docs/adr/0011-budgets-categories-expenses-data-model.md).
+  - [x] Phase 1 — Budgets CRUD (auto-creates Uncategorized) + app-shell refactor (2026-07-05)
+  - [ ] Phase 2 — Categories CRUD (deleting one reassigns its expenses to Uncategorized)
+  - [ ] Phase 3 — Expenses CRUD (`spent_at` date defaulting to today, quick "save & add another")
+  - [ ] Later session — charts + category colours (option C): category breakdown & spend
+        over time, `GET /api/budgets/{id}/summary`, chart-library ADR, token palette +
+        custom-hex override
 
 ## Done
 
@@ -25,6 +34,7 @@ _Unsorted, capture-anything. Groom later._
 - [x] Angular 22 + Angular Material scaffold (2026-06-28)
 
 ## Someday / maybe
+
 _Parked ideas, not committed to._
 
 - [ ] Storybook component catalog + visual-regression testing (Chromatic / Playwright), once

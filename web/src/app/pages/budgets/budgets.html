@@ -1,0 +1,67 @@
+<div class="budgets-header">
+  <h1 class="page-title">Budgets</h1>
+  <button mat-flat-button type="button" (click)="create()">
+    <mat-icon>add</mat-icon>
+    New budget
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="state">
+    <mat-spinner diameter="36" />
+  </div>
+} @else if (budgets().length === 0) {
+  <mat-card appearance="outlined" class="empty-card">
+    <mat-card-content class="empty-content">
+      <p>No budgets yet. Create your first one to start tracking expenses.</p>
+      <button mat-flat-button type="button" (click)="create()">
+        <mat-icon>add</mat-icon>
+        New budget
+      </button>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <div class="budget-grid">
+    @for (b of budgets(); track b.id) {
+      <mat-card
+        appearance="outlined"
+        class="budget-card"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Open ' + b.name"
+        (click)="open(b)"
+        (keydown.enter)="open(b)"
+      >
+        <mat-card-header>
+          <mat-card-title>{{ b.name }}</mat-card-title>
+          <mat-card-subtitle>{{ b.currency }}</mat-card-subtitle>
+          <button
+            mat-icon-button
+            type="button"
+            class="card-menu"
+            aria-label="Budget actions"
+            [matMenuTriggerFor]="menu"
+            (click)="$event.stopPropagation()"
+          >
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item type="button" (click)="edit(b)">
+              <mat-icon>edit</mat-icon>
+              <span>Edit</span>
+            </button>
+            <button mat-menu-item type="button" (click)="remove(b)">
+              <mat-icon>delete</mat-icon>
+              <span>Delete</span>
+            </button>
+          </mat-menu>
+        </mat-card-header>
+        <mat-card-content>
+          @if (b.targetMinor !== null) {
+            <p class="target">Target: {{ b.targetMinor | money: b.currency }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+}

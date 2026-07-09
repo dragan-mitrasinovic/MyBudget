@@ -10,12 +10,21 @@
   <mat-sidenav-container class="shell">
     <mat-sidenav class="side-nav" mode="side" opened>
       <mat-nav-list>
-        <!-- Navigation menus go here later -->
+        <a
+          mat-list-item
+          routerLink="/budgets"
+          routerLinkActive
+          #budgetsLink="routerLinkActive"
+          [activated]="budgetsLink.isActive"
+        >
+          <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
+          <span matListItemTitle>Budgets</span>
+        </a>
       </mat-nav-list>
     </mat-sidenav>
 
     <mat-sidenav-content class="content">
-      <!-- Home content goes here later -->
+      <router-outlet />
     </mat-sidenav-content>
   </mat-sidenav-container>
 }

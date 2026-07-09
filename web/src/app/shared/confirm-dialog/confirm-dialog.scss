@@ -1,0 +1,11 @@
+.confirm-message {
+  margin: 0;
+  max-width: 40ch;
+}
+
+button.confirm-action {
+  // Angular Material paints unthemed flat buttons from the primary system token, so the
+  // --mdc-* container vars don't take effect here — set the error colours directly.
+  background-color: var(--mat-sys-error);
+  color: var(--mat-sys-on-error);
+}

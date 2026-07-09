@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -7,15 +7,24 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { SocialAuthService } from '@abacritt/angularx-social-login';
 
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
-  selector: 'app-home',
-  imports: [MatButtonModule, MatIconModule, MatListModule, MatSidenavModule, MatToolbarModule],
-  templateUrl: './home.html',
-  styleUrl: './home.scss',
+  selector: 'app-shell',
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    MatButtonModule,
+    MatIconModule,
+    MatListModule,
+    MatSidenavModule,
+    MatToolbarModule,
+  ],
+  templateUrl: './shell.html',
+  styleUrl: './shell.scss',
 })
-export class Home {
+export class Shell {
   private auth = inject(AuthService);
   private social = inject(SocialAuthService);
   private router = inject(Router);

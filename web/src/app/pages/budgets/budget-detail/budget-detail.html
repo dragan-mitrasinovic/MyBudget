@@ -1,0 +1,24 @@
+<button mat-button type="button" class="back" (click)="back()">
+  <mat-icon>arrow_back</mat-icon>
+  Budgets
+</button>
+
+@if (loading()) {
+  <div class="state">
+    <mat-spinner diameter="36" />
+  </div>
+} @else if (notFound()) {
+  <p>Budget not found.</p>
+} @else if (budget(); as b) {
+  <header class="detail-header">
+    <h1 class="page-title">{{ b.name }}</h1>
+    <p class="meta">
+      <span>{{ b.currency }}</span>
+      @if (b.targetMinor !== null) {
+        <span>· Target {{ b.targetMinor | money: b.currency }}</span>
+      }
+    </p>
+  </header>
+
+  <!-- Categories (Phase 2) and expenses (Phase 3) go here later. -->
+}
