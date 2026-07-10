@@ -1,0 +1,10 @@
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  min-width: 320px;
+  padding-top: var(--space-1);
+}
+
+.form-fields mat-form-field {
+  width: 100%;
+}

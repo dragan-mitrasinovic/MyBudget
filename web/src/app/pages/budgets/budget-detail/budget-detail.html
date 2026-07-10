@@ -20,5 +20,107 @@
     </p>
   </header>
 
-  <!-- Categories (Phase 2) and expenses (Phase 3) go here later. -->
+  <mat-card appearance="outlined" class="section">
+    <mat-card-content>
+      <div class="section-header">
+        <h2 class="section-title">Categories</h2>
+        <button mat-flat-button type="button" (click)="addCategory()">
+          <mat-icon>add</mat-icon>
+          Add category
+        </button>
+      </div>
+
+      <mat-list>
+        @for (c of categories(); track c.id) {
+          <mat-list-item>
+            <span matListItemTitle>{{ c.name }}</span>
+            @if (c.isSystem) {
+              <span matListItemMeta class="system-hint">Default</span>
+            } @else {
+              <button
+                matListItemMeta
+                mat-icon-button
+                type="button"
+                [matMenuTriggerFor]="catMenu"
+                [matMenuTriggerData]="{ $implicit: c }"
+                aria-label="Category actions"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            }
+          </mat-list-item>
+        }
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-menu #catMenu="matMenu">
+    <ng-template matMenuContent let-category>
+      <button mat-menu-item type="button" (click)="editCategory(category)">
+        <mat-icon>edit</mat-icon>
+        <span>Rename</span>
+      </button>
+      <button mat-menu-item type="button" (click)="removeCategory(category)">
+        <mat-icon>delete</mat-icon>
+        <span>Delete</span>
+      </button>
+    </ng-template>
+  </mat-menu>
+
+  <mat-card appearance="outlined" class="section">
+    <mat-card-content>
+      <div class="section-header">
+        <div class="section-heading">
+          <h2 class="section-title">Expenses</h2>
+          @if (expenses().length > 0) {
+            <span class="section-total">Total {{ totalMinor() | money: b.currency }}</span>
+          }
+        </div>
+        <button mat-flat-button type="button" (click)="addExpense()">
+          <mat-icon>add</mat-icon>
+          Add expense
+        </button>
+      </div>
+
+      @if (expenses().length === 0) {
+        <p class="empty-hint">No expenses yet. Add your first one to start tracking.</p>
+      } @else {
+        <mat-list>
+          @for (e of expenses(); track e.id) {
+            <mat-list-item>
+              <span matListItemTitle>{{ categoryNames().get(e.categoryId) }}</span>
+              <span matListItemLine class="expense-sub">
+                {{ formatDate(e.spentAt) }}{{ e.note ? ' · ' + e.note : '' }}
+              </span>
+              <span matListItemMeta class="expense-meta">
+                <span class="expense-amount">{{ e.amountMinor | money: b.currency }}</span>
+                <button
+                  mat-icon-button
+                  type="button"
+                  [matMenuTriggerFor]="expenseMenu"
+                  [matMenuTriggerData]="{ $implicit: e }"
+                  aria-label="Expense actions"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+              </span>
+            </mat-list-item>
+          }
+        </mat-list>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-menu #expenseMenu="matMenu">
+    <ng-template matMenuContent let-expense>
+      <button mat-menu-item type="button" (click)="editExpense(expense)">
+        <mat-icon>edit</mat-icon>
+        <span>Edit</span>
+      </button>
+      <button mat-menu-item type="button" (click)="removeExpense(expense)">
+        <mat-icon>delete</mat-icon>
+        <span>Delete</span>
+      </button>
+    </ng-template>
+  </mat-menu>
 }

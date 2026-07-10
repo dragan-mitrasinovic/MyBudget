@@ -48,6 +48,16 @@ func main() {
 	mux.HandleFunc("PATCH /api/budgets/{id}", srv.handleUpdateBudget)
 	mux.HandleFunc("DELETE /api/budgets/{id}", srv.handleDeleteBudget)
 
+	mux.HandleFunc("GET /api/budgets/{id}/categories", srv.handleListCategories)
+	mux.HandleFunc("POST /api/budgets/{id}/categories", srv.handleCreateCategory)
+	mux.HandleFunc("PATCH /api/categories/{id}", srv.handleUpdateCategory)
+	mux.HandleFunc("DELETE /api/categories/{id}", srv.handleDeleteCategory)
+
+	mux.HandleFunc("GET /api/budgets/{id}/expenses", srv.handleListExpenses)
+	mux.HandleFunc("POST /api/budgets/{id}/expenses", srv.handleCreateExpense)
+	mux.HandleFunc("PATCH /api/expenses/{id}", srv.handleUpdateExpense)
+	mux.HandleFunc("DELETE /api/expenses/{id}", srv.handleDeleteExpense)
+
 	// Dev-only dummy-login shortcut (see ADR-0010), enabled with DEV_AUTH=true so that
 	// local and automated testing can reach authenticated screens without Google sign-in.
 	if devAuth {

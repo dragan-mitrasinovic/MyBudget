@@ -1,0 +1,18 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Rename category' : 'New category' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-dialog-content class="form-fields">
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" maxlength="100" cdkFocusInitial />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>Name is required</mat-error>
+      }
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button type="submit">{{ isEdit ? 'Save' : 'Add' }}</button>
+  </mat-dialog-actions>
+</form>

@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import {
   GoogleLoginProvider,
   SOCIAL_AUTH_CONFIG,
@@ -23,6 +24,7 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withFetch()),
+    provideNativeDateAdapter(),
     provideAppInitializer(() => inject(AuthService).init()),
     {
       // angularx-social-login: SocialAuthService (providedIn root) reads this token.
