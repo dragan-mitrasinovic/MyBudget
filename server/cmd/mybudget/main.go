@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -20,6 +21,14 @@ func main() {
 	clientID := os.Getenv("GOOGLE_CLIENT_ID")
 	if clientID == "" {
 		log.Fatal("GOOGLE_CLIENT_ID is required")
+	}
+
+	appOrigin := os.Getenv("APP_ORIGIN")
+	parsedOrigin, err := url.Parse(appOrigin)
+	if err != nil || (parsedOrigin.Scheme != "http" && parsedOrigin.Scheme != "https") ||
+		parsedOrigin.Host == "" || parsedOrigin.User != nil || parsedOrigin.Path != "" ||
+		parsedOrigin.RawQuery != "" || parsedOrigin.Fragment != "" {
+		log.Fatalf("APP_ORIGIN must be an HTTP(S) origin without a path, got %q", appOrigin)
 	}
 
 	port := envOrDefault("PORT", "8080")
@@ -40,6 +49,7 @@ func main() {
 		GoogleClientID: clientID,
 		SessionTTL:     sessionTTL,
 		IsDevelopment:  isDevelopment,
+		AppOrigin:      appOrigin,
 	})
 
 	addr := ":" + port

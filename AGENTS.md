@@ -50,7 +50,8 @@ deps via `npm ci`) and run `lefthook install` so the commit hook is active.
 Two processes, then open http://localhost:4200:
 
 - `make dev-api` — the Go API on :8080 in development mode (`IS_DEVELOPMENT=true`),
-  with the dev-only dummy-login route and non-Secure localhost session cookies.
+  with the dev-only dummy-login route, non-Secure localhost session cookies, and
+  `APP_ORIGIN=http://localhost:4200` for CSRF protection.
 - `make dev-web` — the Angular dev server, which proxies `/api` to the API.
 
 **Signing in without Google (dummy user).** The app is behind Google sign-in (ADR-0006), which

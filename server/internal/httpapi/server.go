@@ -11,6 +11,7 @@ type Config struct {
 	GoogleClientID string
 	SessionTTL     time.Duration
 	IsDevelopment  bool
+	AppOrigin      string
 }
 
 // Server holds the dependencies and config shared by the HTTP handlers.
@@ -19,4 +20,5 @@ type Server struct {
 	googleClientID   string
 	useSecureCookies bool
 	sessionTTL       time.Duration
+	appOrigin        string
 }

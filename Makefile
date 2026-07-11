@@ -43,8 +43,9 @@ check: fmt-check lint
 # dev-api uses the real Google client ID (matching the web app's dev config) so real
 # "Sign in with Google" works locally, and *also* keeps the dev-only dummy-login route
 # enabled (IS_DEVELOPMENT=true) so agents/automation can sign in headlessly via /api/dev/login.
+# APP_ORIGIN is the browser-facing Angular origin accepted by the API's CSRF check.
 dev-api:
-	cd server && IS_DEVELOPMENT=true GOOGLE_CLIENT_ID=923945549782-d0tr117jt1lo0i4u2r5aq783flp7uo3g.apps.googleusercontent.com go run ./cmd/mybudget
+	cd server && IS_DEVELOPMENT=true APP_ORIGIN=http://localhost:4200 GOOGLE_CLIENT_ID=923945549782-d0tr117jt1lo0i4u2r5aq783flp7uo3g.apps.googleusercontent.com go run ./cmd/mybudget
 
 dev-web:
 	cd web && npm start

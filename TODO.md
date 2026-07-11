@@ -9,7 +9,8 @@ ADR (`docs/adr/`), not here — this file is "what to do," ADRs are "why we chos
 
 _Unsorted, capture-anything. Groom later._
 
-- [ ] (nothing yet)
+- [ ] Define and implement currency safety: validate supported currencies/minor units and
+      prevent or explicitly handle changing a budget's currency after expenses exist
 
 ## In progress
 

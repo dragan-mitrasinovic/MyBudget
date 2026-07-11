@@ -11,6 +11,7 @@ behavior changes.
 - API prefix: `/api`
 - Production transport: HTTPS
 - Local transport: the Angular dev server proxies `/api` to `http://localhost:8080`
+- Browser-facing origin: configured by `APP_ORIGIN` (for example, `http://localhost:4200`)
 - Request and response field names: camelCase JSON
 - Authentication: opaque server-side session in the `session` cookie
 - Success bodies: JSON, except `204 No Content` responses
@@ -54,8 +55,13 @@ Cookie properties:
   `IS_DEVELOPMENT=true`.
 
 A missing, unknown, or expired session receives `401 Unauthorized` on protected endpoints.
-Expired session rows are deleted best-effort when resolved. Cookie-based state-changing requests
-currently rely on `SameSite=Lax`; the server does not yet perform an Origin check.
+Expired session rows are deleted best-effort when resolved.
+
+Every `POST`, `PATCH`, and `DELETE` route requires an `Origin` header that exactly matches
+`APP_ORIGIN`. A missing or different Origin receives `403 Forbidden` with `forbidden`; the
+handler is not invoked. Read-only routes do not require Origin. The development-only
+`GET /api/dev/login` is the sole state-changing GET exception and remains directly visitable in
+a browser; its `POST` variant is Origin-protected like every other POST route.
 
 Every protected query is scoped to the authenticated user. For individual resources, a resource
 that does not exist and a resource owned by another user are both generally reported as
@@ -234,7 +240,8 @@ Success: `204 No Content`.
 
 Available only when `IS_DEVELOPMENT=true`; otherwise the route is not registered and returns
 `404 Not Found`. Both methods perform the same state-changing operation. `GET` exists only so a
-developer or test agent can open the URL directly in a browser.
+developer or test agent can open the URL directly in a browser. The `POST` variant requires the
+configured app Origin; the development-only `GET` variant does not.
 
 Behavior:
 

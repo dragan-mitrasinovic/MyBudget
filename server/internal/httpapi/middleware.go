@@ -22,3 +22,16 @@ func (srv *Server) requireAuthenticatedUser(w http.ResponseWriter, r *http.Reque
 
 	return user
 }
+
+// requireAppOrigin rejects state-changing browser requests that do not come from the
+// configured application origin.
+func (srv *Server) requireAppOrigin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Origin") != srv.appOrigin {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
