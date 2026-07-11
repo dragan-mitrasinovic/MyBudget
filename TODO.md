@@ -26,6 +26,8 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Basic backend test suite covering request validation, data ownership and integrity, and
+      route security (2026-07-11)
 - [x] Automatic Go API rebuild and restart with Air (2026-07-11)
 - [x] Throttled sliding session expiry with daily renewal (2026-07-11)
 - [x] Home page app shell: top bar (app name + log out) and left sidenav for future menus (2026-07-04)

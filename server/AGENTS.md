@@ -93,3 +93,15 @@ Run from `server/` (or `make lint` / `make vet` from the repo root). See ADR-000
 - `golangci-lint run` — meta-linter with a minimal starter set (`govet`, `staticcheck`,
   `errcheck`, `ineffassign`, `unused`) configured in [`.golangci.yml`](../.golangci.yml).
   Add linters only when they earn their keep.
+
+## Testing
+
+- Prefer small table-driven unit tests for validation, parsing, and middleware control flow.
+- Test Store ownership and data-integrity invariants against a real SQLite database in
+  `t.TempDir()`; do not mock SQL behavior that the database can verify directly.
+- Use `httptest` through the complete router only when route registration, authentication,
+  Origin protection, or HTTP response mapping is the behavior under test.
+- Keep tests deterministic and local: no external services, wall-clock sleeps, or shared
+  databases. Use `t.Helper()` and `t.Cleanup()` in repeated setup.
+- Run a focused test while iterating, then `go test ./internal/store`,
+  `go test ./internal/httpapi`, and finally `go test ./...`.

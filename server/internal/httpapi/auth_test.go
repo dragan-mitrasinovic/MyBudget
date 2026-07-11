@@ -64,6 +64,76 @@ func TestGetCurrentUserRenewsSessionAndCookieOncePerInterval(t *testing.T) {
 	}
 }
 
+func TestGetCurrentUserWithoutSessionIsUnauthorized(t *testing.T) {
+	_, handler := openHTTPTestServer(t, false)
+	request := httptest.NewRequest(http.MethodGet, "/api/me", nil)
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want %d", response.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestLogoutClearsAndInvalidatesSession(t *testing.T) {
+	st, handler := openHTTPTestServer(t, false)
+	_, sessionID := createHTTPTestUserSession(t, st, "logout-user")
+
+	requestLogout := func(sessionID string) *httptest.ResponseRecorder {
+		request := httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
+		request.Header.Set("Origin", testAppOrigin)
+		if sessionID != "" {
+			request.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionID})
+		}
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		return response
+	}
+
+	logoutResponse := requestLogout(sessionID)
+	if logoutResponse.Code != http.StatusNoContent {
+		t.Fatalf("logout status = %d, want %d", logoutResponse.Code, http.StatusNoContent)
+	}
+
+	clearedCookie := findSessionCookie(t, logoutResponse.Result().Cookies())
+	if clearedCookie.Value != "" || clearedCookie.MaxAge != -1 || !clearedCookie.HttpOnly || !clearedCookie.Secure {
+		t.Errorf("cleared cookie = %#v, want expired secure HttpOnly cookie", clearedCookie)
+	}
+
+	currentUserResponse := requestCurrentUser(t, handler, sessionID)
+	if currentUserResponse.Code != http.StatusUnauthorized {
+		t.Errorf("current-user status after logout = %d, want %d", currentUserResponse.Code, http.StatusUnauthorized)
+	}
+
+	idempotentResponse := requestLogout("")
+	if idempotentResponse.Code != http.StatusNoContent {
+		t.Errorf("logout without cookie status = %d, want %d", idempotentResponse.Code, http.StatusNoContent)
+	}
+}
+
+func TestDevLoginCreatesUsableDevelopmentSession(t *testing.T) {
+	_, handler := openHTTPTestServer(t, true)
+	request := httptest.NewRequest(http.MethodGet, "/api/dev/login", nil)
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("dev login status = %d, want %d", response.Code, http.StatusOK)
+	}
+
+	sessionCookie := findSessionCookie(t, response.Result().Cookies())
+	if sessionCookie.Value == "" || !sessionCookie.HttpOnly || sessionCookie.Secure || sessionCookie.SameSite != http.SameSiteLaxMode {
+		t.Errorf("development session cookie = %#v, want non-Secure HttpOnly Lax cookie", sessionCookie)
+	}
+
+	currentUserResponse := requestCurrentUser(t, handler, sessionCookie.Value)
+	if currentUserResponse.Code != http.StatusOK {
+		t.Errorf("current-user status = %d, want %d", currentUserResponse.Code, http.StatusOK)
+	}
+}
+
 func openAuthTestStore(t *testing.T) (*store.Store, *sql.DB) {
 	t.Helper()
 
