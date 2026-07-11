@@ -43,7 +43,8 @@ of truth) and enforced in layers — editor, agent hook, and a lefthook pre-comm
 - `make check` — fmt-check + lint; run before committing.
 
 First-time setup per clone: install the tools (`golangci-lint`, `lefthook`, plus the web
-deps via `npm ci`) and run `lefthook install` so the commit hook is active.
+deps via `npm ci`) and run `lefthook install` so the commit hook is active. Air is pinned
+in the server module and downloaded automatically by Go; do not install it globally.
 
 ## Running & verifying locally
 
@@ -51,7 +52,8 @@ Two processes, then open http://localhost:4200:
 
 - `make dev-api` — the Go API on :8080 in development mode (`IS_DEVELOPMENT=true`),
   with the dev-only dummy-login route, non-Secure localhost session cookies, and
-  `APP_ORIGIN=http://localhost:4200` for CSRF protection.
+  `APP_ORIGIN=http://localhost:4200` for CSRF protection. Air rebuilds and restarts it
+  when Go source, embedded migrations, or module files change.
 - `make dev-web` — the Angular dev server, which proxies `/api` to the API.
 
 **Signing in without Google (dummy user).** The app is behind Google sign-in (ADR-0006), which

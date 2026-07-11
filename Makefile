@@ -11,7 +11,7 @@ help:
 	@echo "make check      fmt-check + lint (run before committing)"
 	@echo ""
 	@echo "Local dev (not part of the gate):"
-	@echo "make dev-api    run the Go API in development mode (real Google + dummy login)"
+	@echo "make dev-api    run and auto-reload the Go API (real Google + dummy login)"
 	@echo "make dev-web    run the Angular dev server (proxies /api to the API)"
 
 fmt:
@@ -45,7 +45,7 @@ check: fmt-check lint
 # enabled (IS_DEVELOPMENT=true) so agents/automation can sign in headlessly via /api/dev/login.
 # APP_ORIGIN is the browser-facing Angular origin accepted by the API's CSRF check.
 dev-api:
-	cd server && IS_DEVELOPMENT=true APP_ORIGIN=http://localhost:4200 GOOGLE_CLIENT_ID=923945549782-d0tr117jt1lo0i4u2r5aq783flp7uo3g.apps.googleusercontent.com go run ./cmd/mybudget
+	cd server && IS_DEVELOPMENT=true APP_ORIGIN=http://localhost:4200 GOOGLE_CLIENT_ID=923945549782-d0tr117jt1lo0i4u2r5aq783flp7uo3g.apps.googleusercontent.com go tool air -c .air.toml
 
 dev-web:
 	cd web && npm start

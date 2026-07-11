@@ -1,6 +1,7 @@
 # Backend (Go) build output
 /server/bin/
 /server/mybudget
+/server/tmp/
 
 # SQLite databases (created at runtime)
 *.db

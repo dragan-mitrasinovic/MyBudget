@@ -85,6 +85,9 @@ Conventions for this folder, applied on top of `gofmt`:
 
 Run from `server/` (or `make lint` / `make vet` from the repo root). See ADR-0008.
 
+- `make dev-api` from the repository root — run the development API through the pinned Air
+  tool, rebuilding and restarting it when backend source files change. Prefer this over calling
+  Air directly because the Make target supplies the required development environment.
 - `gofmt -w .` — formatting. The blank-line rule above is house style layered on top.
 - `go vet ./...` — built-in correctness checks.
 - `golangci-lint run` — meta-linter with a minimal starter set (`govet`, `staticcheck`,
