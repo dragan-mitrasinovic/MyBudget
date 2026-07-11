@@ -2,7 +2,25 @@
 
 The Go HTTP API backend for MyBudget. Standard-library `net/http`, SQLite via
 `modernc.org/sqlite`. See the root [AGENTS.md](../AGENTS.md) and [docs/adr/](../docs/adr/)
-for project-wide context.
+for project-wide context. The complete current HTTP contract is documented in
+[`API.md`](API.md).
+
+## API documentation
+
+- **Read `API.md` before working on backend behavior.** Use it together with
+  `internal/httpapi/routes.go`, the relevant handler, and the relevant store method to understand
+  the existing contract and domain side effects.
+- **Update `API.md` in the same change as any API change.** This includes adding or removing an
+  endpoint; changing a method, path, authentication rule, request field, query parameter,
+  response shape, status code, validation rule, error meaning, ordering rule, or side effect.
+- Add every implemented endpoint to both the endpoint index and its detailed resource section.
+  Document current behavior only, including non-obvious invariants such as Uncategorized
+  category creation, reassignment, ownership scoping, cascading deletion, and environment-only
+  routes.
+- Keep examples aligned with the actual JSON tags and use the exact current field casing. When
+  an API change also changes an architectural decision, update `API.md` and add or supersede the
+  relevant ADR.
+- An endpoint change is not complete until its implementation, tests, and `API.md` agree.
 
 ## Package layout
 

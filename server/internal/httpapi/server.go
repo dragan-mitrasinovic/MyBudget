@@ -10,8 +10,7 @@ import (
 type Config struct {
 	GoogleClientID string
 	SessionTTL     time.Duration
-	// IsDevelopment enables dev-only routes and allows session cookies over localhost HTTP.
-	IsDevelopment bool
+	IsDevelopment  bool
 }
 
 // Server holds the dependencies and config shared by the HTTP handlers.
