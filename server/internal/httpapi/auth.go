@@ -57,9 +57,9 @@ func (srv *Server) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, user)
 }
 
-// handleMe returns the signed-in user, or 401 if there is no valid session.
-func (srv *Server) handleMe(w http.ResponseWriter, r *http.Request) {
-	user, err := srv.currentUser(r)
+// handleGetCurrentUser returns the signed-in user, or 401 if there is no valid session.
+func (srv *Server) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	user, err := srv.userFromSessionCookie(r)
 	if err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
@@ -83,9 +83,9 @@ func (srv *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// currentUser resolves the session cookie to a user, returning (nil, nil) when there
+// userFromSessionCookie resolves the session cookie to a user, returning (nil, nil) when there
 // is no cookie or the session is invalid/expired.
-func (srv *Server) currentUser(r *http.Request) (*store.User, error) {
+func (srv *Server) userFromSessionCookie(r *http.Request) (*store.User, error) {
 	c, err := r.Cookie(sessionCookieName)
 	if err != nil {
 		if errors.Is(err, http.ErrNoCookie) {

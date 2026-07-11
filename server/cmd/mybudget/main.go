@@ -22,9 +22,9 @@ func main() {
 		log.Fatal("GOOGLE_CLIENT_ID is required")
 	}
 
-	port := getenv("PORT", "8080")
-	dbPath := getenv("DB_PATH", "./mybudget.db")
-	sessionTTL := parseTTL(getenv("SESSION_TTL", "720h"))
+	port := envOrDefault("PORT", "8080")
+	dbPath := envOrDefault("DB_PATH", "./mybudget.db")
+	sessionTTL := mustParseSessionTTL(envOrDefault("SESSION_TTL", "720h"))
 
 	st, err := store.Open(dbPath)
 	if err != nil {
@@ -49,7 +49,7 @@ func main() {
 	}
 }
 
-func getenv(key, def string) string {
+func envOrDefault(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
@@ -57,7 +57,7 @@ func getenv(key, def string) string {
 	return def
 }
 
-func parseTTL(s string) time.Duration {
+func mustParseSessionTTL(s string) time.Duration {
 	d, err := time.ParseDuration(s)
 	if err != nil {
 		log.Fatalf("invalid SESSION_TTL %q: %v", s, err)

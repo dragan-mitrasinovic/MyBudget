@@ -22,8 +22,8 @@ type expenseRequest struct {
 	SpentAt     string `json:"spentAt"`
 }
 
-// normalize trims and validates an expense payload in place.
-func (req *expenseRequest) normalize() error {
+// normalizeAndValidate trims and validates an expense payload in place.
+func (req *expenseRequest) normalizeAndValidate() error {
 	req.Note = strings.TrimSpace(req.Note)
 
 	if req.CategoryID <= 0 {
@@ -38,21 +38,21 @@ func (req *expenseRequest) normalize() error {
 		return fmt.Errorf("note must be at most %d characters", maxNoteLen)
 	}
 
-	if !isDate(req.SpentAt) {
+	if !isValidISODate(req.SpentAt) {
 		return fmt.Errorf("spentAt must be a valid date (YYYY-MM-DD)")
 	}
 
 	return nil
 }
 
-// isDate reports whether s is a valid calendar date in YYYY-MM-DD form.
-func isDate(s string) bool {
+// isValidISODate reports whether s is a valid calendar date in YYYY-MM-DD form.
+func isValidISODate(s string) bool {
 	_, err := time.Parse("2006-01-02", s)
 	return err == nil
 }
 
 func (srv *Server) handleListExpenses(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -87,7 +87,7 @@ func (srv *Server) handleListExpenses(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) handleCreateExpense(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -103,7 +103,7 @@ func (srv *Server) handleCreateExpense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := req.normalize(); err != nil {
+	if err := req.normalizeAndValidate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -120,7 +120,7 @@ func (srv *Server) handleCreateExpense(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) handleUpdateExpense(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -136,7 +136,7 @@ func (srv *Server) handleUpdateExpense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := req.normalize(); err != nil {
+	if err := req.normalizeAndValidate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -153,7 +153,7 @@ func (srv *Server) handleUpdateExpense(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) handleDeleteExpense(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}

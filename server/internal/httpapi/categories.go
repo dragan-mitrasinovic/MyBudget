@@ -14,8 +14,8 @@ type categoryRequest struct {
 	Name string `json:"name"`
 }
 
-// normalize trims and validates a category payload in place.
-func (req *categoryRequest) normalize() error {
+// normalizeAndValidate trims and validates a category payload in place.
+func (req *categoryRequest) normalizeAndValidate() error {
 	req.Name = strings.TrimSpace(req.Name)
 
 	if req.Name == "" || len(req.Name) > maxNameLen {
@@ -26,7 +26,7 @@ func (req *categoryRequest) normalize() error {
 }
 
 func (srv *Server) handleListCategories(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -53,7 +53,7 @@ func (srv *Server) handleListCategories(w http.ResponseWriter, r *http.Request) 
 }
 
 func (srv *Server) handleCreateCategory(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -69,7 +69,7 @@ func (srv *Server) handleCreateCategory(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := req.normalize(); err != nil {
+	if err := req.normalizeAndValidate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -84,7 +84,7 @@ func (srv *Server) handleCreateCategory(w http.ResponseWriter, r *http.Request) 
 }
 
 func (srv *Server) handleUpdateCategory(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -100,7 +100,7 @@ func (srv *Server) handleUpdateCategory(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := req.normalize(); err != nil {
+	if err := req.normalizeAndValidate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -115,7 +115,7 @@ func (srv *Server) handleUpdateCategory(w http.ResponseWriter, r *http.Request) 
 }
 
 func (srv *Server) handleDeleteCategory(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}

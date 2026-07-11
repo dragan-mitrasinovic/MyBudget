@@ -28,7 +28,7 @@ type ExpenseFilter struct {
 // ListExpenses returns a budget's expenses (newest first) scoped to the owner, optionally
 // filtered. It returns ErrNotFound if the budget is not the caller's.
 func (s *Store) ListExpenses(ctx context.Context, userID, budgetID int64, filter ExpenseFilter) ([]Expense, error) {
-	owned, err := s.budgetOwnedByUser(ctx, userID, budgetID)
+	owned, err := s.isBudgetOwnedByUser(ctx, userID, budgetID)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (s *Store) ListExpenses(ctx context.Context, userID, budgetID int64, filter
 
 // CreateExpense adds an expense to a category that belongs to a budget the caller owns.
 func (s *Store) CreateExpense(ctx context.Context, userID, budgetID, categoryID, amountMinor int64, note, spentAt string) (*Expense, error) {
-	if err := s.checkCategoryInBudget(ctx, userID, budgetID, categoryID); err != nil {
+	if err := s.validateCategoryForOwnedBudget(ctx, userID, budgetID, categoryID); err != nil {
 		return nil, err
 	}
 
@@ -101,18 +101,18 @@ func (s *Store) CreateExpense(ctx context.Context, userID, budgetID, categoryID,
 		return nil, err
 	}
 
-	return s.expenseByID(ctx, id)
+	return s.getExpenseByID(ctx, id)
 }
 
 // UpdateExpense edits an expense the caller owns; the new category must be in the same
 // budget as the expense.
 func (s *Store) UpdateExpense(ctx context.Context, userID, expenseID, categoryID, amountMinor int64, note, spentAt string) (*Expense, error) {
-	budgetID, err := s.expenseBudget(ctx, userID, expenseID)
+	budgetID, err := s.getExpenseBudgetIDForUser(ctx, userID, expenseID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := s.checkCategoryInBudget(ctx, userID, budgetID, categoryID); err != nil {
+	if err := s.validateCategoryForOwnedBudget(ctx, userID, budgetID, categoryID); err != nil {
 		return nil, err
 	}
 
@@ -126,7 +126,7 @@ func (s *Store) UpdateExpense(ctx context.Context, userID, expenseID, categoryID
 		return nil, err
 	}
 
-	return s.expenseByID(ctx, expenseID)
+	return s.getExpenseByID(ctx, expenseID)
 }
 
 // DeleteExpense removes an expense the caller owns, reporting ErrNotFound otherwise.
@@ -157,10 +157,10 @@ func (s *Store) DeleteExpense(ctx context.Context, userID, expenseID int64) erro
 	return nil
 }
 
-// checkCategoryInBudget verifies the budget belongs to the user and the category is in it,
-// returning ErrNotFound or ErrInvalidCategory respectively.
-func (s *Store) checkCategoryInBudget(ctx context.Context, userID, budgetID, categoryID int64) error {
-	owned, err := s.budgetOwnedByUser(ctx, userID, budgetID)
+// validateCategoryForOwnedBudget verifies the budget belongs to the user and the category is
+// in it, returning ErrNotFound or ErrInvalidCategory respectively.
+func (s *Store) validateCategoryForOwnedBudget(ctx context.Context, userID, budgetID, categoryID int64) error {
+	owned, err := s.isBudgetOwnedByUser(ctx, userID, budgetID)
 	if err != nil {
 		return err
 	}
@@ -183,8 +183,8 @@ func (s *Store) checkCategoryInBudget(ctx context.Context, userID, budgetID, cat
 	return nil
 }
 
-// expenseBudget returns the budget id of an expense owned by the user, or ErrNotFound.
-func (s *Store) expenseBudget(ctx context.Context, userID, expenseID int64) (int64, error) {
+// getExpenseBudgetIDForUser returns the budget ID of an expense owned by the user, or ErrNotFound.
+func (s *Store) getExpenseBudgetIDForUser(ctx context.Context, userID, expenseID int64) (int64, error) {
 	const query = `
 		SELECT c.budget_id
 		FROM expenses e
@@ -205,8 +205,8 @@ func (s *Store) expenseBudget(ctx context.Context, userID, expenseID int64) (int
 	return budgetID, nil
 }
 
-// expenseByID loads a full expense row by id (ownership is checked by the caller).
-func (s *Store) expenseByID(ctx context.Context, id int64) (*Expense, error) {
+// getExpenseByID loads a full expense row by ID (ownership is checked by the caller).
+func (s *Store) getExpenseByID(ctx context.Context, id int64) (*Expense, error) {
 	const query = `
 		SELECT id, category_id, amount_minor, note, spent_at, created_at, updated_at
 		FROM expenses

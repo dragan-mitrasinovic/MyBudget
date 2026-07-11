@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestEnvironmentMode(t *testing.T) {
+func TestDevelopmentModeControlsRoutesAndCookies(t *testing.T) {
 	tests := []struct {
 		name             string
 		isDevelopment    bool

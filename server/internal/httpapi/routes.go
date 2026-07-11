@@ -13,7 +13,7 @@ func New(st *store.Store, cfg Config) http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/auth/google", srv.handleGoogleLogin)
-	mux.HandleFunc("GET /api/me", srv.handleMe)
+	mux.HandleFunc("GET /api/me", srv.handleGetCurrentUser)
 	mux.HandleFunc("POST /api/auth/logout", srv.handleLogout)
 
 	mux.HandleFunc("GET /api/budgets", srv.handleListBudgets)

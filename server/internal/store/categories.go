@@ -49,7 +49,7 @@ func (s *Store) ListCategories(ctx context.Context, userID, budgetID int64) ([]C
 // CreateCategory adds a user category to a budget the caller owns. It returns ErrNotFound
 // when the budget is not the user's, or ErrDuplicateName on a name clash.
 func (s *Store) CreateCategory(ctx context.Context, userID, budgetID int64, name string) (*Category, error) {
-	owned, err := s.budgetOwnedByUser(ctx, userID, budgetID)
+	owned, err := s.isBudgetOwnedByUser(ctx, userID, budgetID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *Store) CreateCategory(ctx context.Context, userID, budgetID int64, name
 // UpdateCategory renames a user category the caller owns. It returns ErrNotFound,
 // ErrSystemCategory (the Uncategorized row is immutable), or ErrDuplicateName.
 func (s *Store) UpdateCategory(ctx context.Context, userID, categoryID int64, name string) (*Category, error) {
-	cat, err := s.categoryForUser(ctx, userID, categoryID)
+	cat, err := s.findCategoryOwnedByUser(ctx, userID, categoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -169,9 +169,9 @@ func (s *Store) DeleteCategory(ctx context.Context, userID, categoryID int64) er
 	return tx.Commit()
 }
 
-// categoryForUser fetches a category joined to its owning budget, or (nil, nil) if it does
+// findCategoryOwnedByUser fetches a category joined to its owning budget, or (nil, nil) if it does
 // not exist or belongs to another user.
-func (s *Store) categoryForUser(ctx context.Context, userID, categoryID int64) (*Category, error) {
+func (s *Store) findCategoryOwnedByUser(ctx context.Context, userID, categoryID int64) (*Category, error) {
 	const query = `
 		SELECT c.id, c.budget_id, c.name, c.is_system, c.created_at
 		FROM categories c
@@ -192,8 +192,8 @@ func (s *Store) categoryForUser(ctx context.Context, userID, categoryID int64) (
 	return &c, nil
 }
 
-// budgetOwnedByUser reports whether the budget exists and belongs to the user.
-func (s *Store) budgetOwnedByUser(ctx context.Context, userID, budgetID int64) (bool, error) {
+// isBudgetOwnedByUser reports whether the budget exists and belongs to the user.
+func (s *Store) isBudgetOwnedByUser(ctx context.Context, userID, budgetID int64) (bool, error) {
 	const query = `SELECT 1 FROM budgets WHERE id = ? AND user_id = ?`
 
 	var one int

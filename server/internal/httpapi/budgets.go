@@ -17,8 +17,8 @@ type budgetRequest struct {
 	Archived    bool   `json:"archived"`
 }
 
-// normalize trims and validates a budget payload in place.
-func (req *budgetRequest) normalize() error {
+// normalizeAndValidate trims and validates a budget payload in place.
+func (req *budgetRequest) normalizeAndValidate() error {
 	req.Name = strings.TrimSpace(req.Name)
 	req.Currency = strings.ToUpper(strings.TrimSpace(req.Currency))
 
@@ -26,7 +26,7 @@ func (req *budgetRequest) normalize() error {
 		return fmt.Errorf("name must be 1-%d characters", maxNameLen)
 	}
 
-	if !isCurrencyCode(req.Currency) {
+	if !matchesCurrencyCodeFormat(req.Currency) {
 		return fmt.Errorf("currency must be a 3-letter code")
 	}
 
@@ -37,8 +37,8 @@ func (req *budgetRequest) normalize() error {
 	return nil
 }
 
-// isCurrencyCode does a shape check (three A-Z letters); it is not a full ISO-4217 table.
-func isCurrencyCode(code string) bool {
+// matchesCurrencyCodeFormat does a shape check (three A-Z letters); it is not a full ISO-4217 table.
+func matchesCurrencyCodeFormat(code string) bool {
 	if len(code) != 3 {
 		return false
 	}
@@ -53,7 +53,7 @@ func isCurrencyCode(code string) bool {
 }
 
 func (srv *Server) handleListBudgets(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -68,7 +68,7 @@ func (srv *Server) handleListBudgets(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) handleCreateBudget(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -79,7 +79,7 @@ func (srv *Server) handleCreateBudget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := req.normalize(); err != nil {
+	if err := req.normalizeAndValidate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -94,7 +94,7 @@ func (srv *Server) handleCreateBudget(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) handleGetBudget(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -119,7 +119,7 @@ func (srv *Server) handleGetBudget(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) handleUpdateBudget(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}
@@ -135,7 +135,7 @@ func (srv *Server) handleUpdateBudget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := req.normalize(); err != nil {
+	if err := req.normalizeAndValidate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -155,7 +155,7 @@ func (srv *Server) handleUpdateBudget(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) handleDeleteBudget(w http.ResponseWriter, r *http.Request) {
-	user := srv.requireUser(w, r)
+	user := srv.requireAuthenticatedUser(w, r)
 	if user == nil {
 		return
 	}

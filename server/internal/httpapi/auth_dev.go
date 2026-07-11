@@ -2,8 +2,7 @@ package httpapi
 
 import "net/http"
 
-// Dev-only fixed identity used by the dummy-login shortcut. The Google sub is a sentinel
-// value that cannot collide with a real Google subject.
+// Dev-only fixed identity used by the dummy-login shortcut.
 const (
 	devUserSub     = "dev-dummy-user"
 	devUserEmail   = "dev@mybudget.local"

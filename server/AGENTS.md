@@ -22,6 +22,14 @@ Conventions for this folder, applied on top of `gofmt`:
   prefixes such as `is`, `has`, `can`, `should`, `use`, or `enable` (for example,
   `isDevelopment` and `useSecureCookies`), rather than vague state names.
 
+- **Function names describe their action and contract.** Lead with a specific verb such as
+  `get`, `find`, `list`, `create`, `validate`, `require`, or `write`; reserve `handle` for HTTP
+  handlers. Include relevant scope or return shape when it is not obvious (for example,
+  `getExpenseBudgetIDForUser`). Use `find` when absence is an expected result, `get` when a
+  value is expected, and compound names when a function has meaningful combined behavior
+  (`normalizeAndValidate`). Keep standard initialisms capitalized (`ID`, `HTTP`, `JSON`). Avoid
+  vague names that hide lookups, validation, response writes, or other significant side effects.
+
 - **Blank line after an `if` block.** Leave one empty line after an `if` statement's
   closing `}` when more code follows in the same block. Skip it only when the next line
   is the enclosing block's own closing `}`.
@@ -31,7 +39,7 @@ Conventions for this folder, applied on top of `gofmt`:
       log.Fatal("GOOGLE_CLIENT_ID is required")
   }
 
-  port := getenv("PORT", "8080")
+  port := envOrDefault("PORT", "8080")
   ```
 
 ## Tooling
