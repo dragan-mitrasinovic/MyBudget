@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { Budget, BudgetInput } from '../../core/budgets/budget.models';
 
 /** Two-decimal currencies offered for now; expand when multi-currency is revisited (ADR-0011). */
-const CURRENCIES = ['EUR', 'USD', 'GBP', 'RSD', 'CHF', 'AUD', 'CAD'];
+const CURRENCIES = ['RSD', 'EUR', 'USD', 'GBP', 'CHF', 'AUD', 'CAD'];
 
 @Component({
   selector: 'app-budget-form-dialog',
@@ -37,7 +37,7 @@ export class BudgetFormDialog {
       Validators.required,
       Validators.maxLength(100),
     ]),
-    currency: this.fb.nonNullable.control(this.budget?.currency ?? 'EUR', [Validators.required]),
+    currency: this.fb.nonNullable.control(this.budget?.currency ?? 'RSD', [Validators.required]),
     target: this.fb.control<number | null>(
       this.budget?.targetMinor != null ? this.budget.targetMinor / 100 : null,
       [Validators.min(0)],
