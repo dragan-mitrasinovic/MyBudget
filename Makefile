@@ -31,10 +31,10 @@ vet:
 	cd server && go vet ./...
 
 test:
-	cd web && npm test
+	cd web && npm test -- --watch=false
 	cd server && go test ./...
 
-# Fast pre-commit-style gate. Tests are intentionally excluded (too slow / can watch); run
+# Fast pre-commit-style gate. Tests are intentionally excluded because they are slower; run
 # `make test` separately.
 check: fmt-check lint
 
