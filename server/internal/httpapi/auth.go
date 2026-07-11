@@ -59,7 +59,7 @@ func (srv *Server) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 
 // handleGetCurrentUser returns the signed-in user, or 401 if there is no valid session.
 func (srv *Server) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
-	user, err := srv.userFromSessionCookie(r)
+	user, err := srv.userFromSessionCookie(w, r)
 	if err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
@@ -84,8 +84,9 @@ func (srv *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 // userFromSessionCookie resolves the session cookie to a user, returning (nil, nil) when there
-// is no cookie or the session is invalid/expired.
-func (srv *Server) userFromSessionCookie(r *http.Request) (*store.User, error) {
+// is no cookie or the session is invalid/expired. When the store renews a valid session, it uses
+// w to send a refreshed cookie so the browser and database expiries remain aligned.
+func (srv *Server) userFromSessionCookie(w http.ResponseWriter, r *http.Request) (*store.User, error) {
 	c, err := r.Cookie(sessionCookieName)
 	if err != nil {
 		if errors.Is(err, http.ErrNoCookie) {
@@ -95,7 +96,21 @@ func (srv *Server) userFromSessionCookie(r *http.Request) (*store.User, error) {
 		return nil, err
 	}
 
-	return srv.store.GetSessionUser(r.Context(), c.Value)
+	user, didRenew, err := srv.store.GetAndRenewSessionUser(
+		r.Context(),
+		c.Value,
+		srv.sessionTTL,
+		srv.sessionRenewalInterval,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if didRenew {
+		srv.setSessionCookie(w, c.Value)
+	}
+
+	return user, nil
 }
 
 func (srv *Server) setSessionCookie(w http.ResponseWriter, sessionID string) {

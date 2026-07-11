@@ -3,6 +3,7 @@ package httpapi
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/dragan-mitrasinovic/MyBudget/server/internal/store"
 )
@@ -46,11 +47,17 @@ func New(st *store.Store, cfg Config) http.Handler {
 }
 
 func newServer(st *store.Store, cfg Config) *Server {
+	sessionRenewalInterval := 24 * time.Hour
+	if cfg.SessionTTL <= sessionRenewalInterval {
+		sessionRenewalInterval = cfg.SessionTTL / 2
+	}
+
 	return &Server{
-		store:            st,
-		googleClientID:   cfg.GoogleClientID,
-		useSecureCookies: !cfg.IsDevelopment,
-		sessionTTL:       cfg.SessionTTL,
-		appOrigin:        cfg.AppOrigin,
+		store:                  st,
+		googleClientID:         cfg.GoogleClientID,
+		useSecureCookies:       !cfg.IsDevelopment,
+		sessionTTL:             cfg.SessionTTL,
+		sessionRenewalInterval: sessionRenewalInterval,
+		appOrigin:              cfg.AppOrigin,
 	}
 }

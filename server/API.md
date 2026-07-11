@@ -50,9 +50,16 @@ Cookie properties:
 - `HttpOnly`: browser JavaScript cannot read the credential.
 - `SameSite=Lax`: the browser restricts cross-site cookie sending.
 - `Path=/`: the cookie applies to every API route.
-- `Max-Age`: matches `SESSION_TTL` (720 hours by default).
+- `Max-Age`: set to `SESSION_TTL` (720 hours by default) at login and renewal.
 - `Secure`: enabled when `IS_DEVELOPMENT=false`; disabled for localhost HTTP when
   `IS_DEVELOPMENT=true`.
+
+A valid session uses throttled sliding expiry. After 24 hours without a renewal, the next
+authenticated request atomically moves the SQLite expiry to `now + SESSION_TTL` and reissues the
+cookie with a fresh `Max-Age`. For a configured TTL of 24 hours or less, the renewal interval is
+half the TTL. With the default configuration, this provides an effective inactivity window of
+29–30 days while limiting successful renewal writes to at most one per active session per day.
+Requests made before the renewal interval authenticate without writing or reissuing the cookie.
 
 A missing, unknown, or expired session receives `401 Unauthorized` on protected endpoints.
 Expired session rows are deleted best-effort when resolved.

@@ -16,9 +16,10 @@ type Config struct {
 
 // Server holds the dependencies and config shared by the HTTP handlers.
 type Server struct {
-	store            *store.Store
-	googleClientID   string
-	useSecureCookies bool
-	sessionTTL       time.Duration
-	appOrigin        string
+	store                  *store.Store
+	googleClientID         string
+	useSecureCookies       bool
+	sessionTTL             time.Duration
+	sessionRenewalInterval time.Duration
+	appOrigin              string
 }

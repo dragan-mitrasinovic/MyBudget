@@ -26,6 +26,7 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Throttled sliding session expiry with daily renewal (2026-07-11)
 - [x] Home page app shell: top bar (app name + log out) and left sidenav for future menus (2026-07-04)
 - [x] Dev dummy-user login (`IS_DEVELOPMENT=true`) + in-browser verification workflow for agents (2026-07-02)
 - [x] Design system foundation: tokens, Material-first pages, stylelint design lint (2026-07-02)
