@@ -26,6 +26,8 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Defined mutable development-stage migration history until prerelease (2026-07-11)
+- [x] Simplified budgets to tracking-only containers across UI, API, and database (2026-07-11)
 - [x] Basic backend test suite covering request validation, data ownership and integrity, and
       route security (2026-07-11)
 - [x] Automatic Go API rebuild and restart with Air (2026-07-11)

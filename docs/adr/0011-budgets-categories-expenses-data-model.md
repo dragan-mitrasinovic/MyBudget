@@ -18,7 +18,7 @@ library and colour palette).
 Three new tables, owned transitively by a user via the budget:
 
 - **budgets** — `id`, `user_id` (FK → `users`, `ON DELETE CASCADE`), `name`, `currency`,
-  `target_minor` (nullable), `archived`, `created_at`, `updated_at`.
+  `archived`, `created_at`, `updated_at`.
 - **categories** — `id`, `budget_id` (FK → `budgets`, `ON DELETE CASCADE`), `name`
   (unique per budget), `is_system` (`0`/`1`), `created_at`.
 - **expenses** — `id`, `category_id` (FK → `categories`, `ON DELETE CASCADE`),
@@ -26,9 +26,9 @@ Three new tables, owned transitively by a user via the budget:
 
 Supporting rules:
 
-- **Money is stored as integer minor units** (`amount_minor`, `target_minor`) to avoid
-  floating-point rounding error. Currency is a per-budget ISO-4217 code; all expenses in a
-  budget share it (no per-expense currency or conversion yet).
+- **Money is stored as integer minor units** (`amount_minor`) to avoid floating-point rounding
+  error. Currency is a per-budget ISO-4217 code; all expenses in a budget share it (no
+  per-expense currency or conversion yet).
 - **Categories are scoped to a single budget** (not a shared per-user library).
 - **Every budget has a permanent "Uncategorized" category**, created together with the
   budget in one transaction and flagged with `is_system = 1`. It cannot be renamed or
@@ -69,5 +69,5 @@ Supporting rules:
   shortcut).
 - (−) The Uncategorized row is special and needs guard logic (no rename/delete, auto-created
   with every budget).
-- (−) Categories don't yet carry planned amounts or colours; per-budget scope means no reuse
-  across budgets. These are intentional omissions for now (colours arrive with charts).
+- (−) Categories don't yet carry colours; per-budget scope means no reuse across budgets. These
+  are intentional omissions for now (colours arrive with charts).

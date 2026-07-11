@@ -13,9 +13,6 @@ import (
 )
 
 func TestBudgetRequestNormalizeAndValidate(t *testing.T) {
-	zeroTarget := int64(0)
-	negativeTarget := int64(-1)
-
 	tests := []struct {
 		name         string
 		request      budgetRequest
@@ -25,13 +22,7 @@ func TestBudgetRequestNormalizeAndValidate(t *testing.T) {
 	}{
 		{
 			name:         "normalizes valid request",
-			request:      budgetRequest{Name: "  Household  ", Currency: " eur ", TargetMinor: &zeroTarget},
-			wantName:     "Household",
-			wantCurrency: "EUR",
-		},
-		{
-			name:         "accepts nil target",
-			request:      budgetRequest{Name: "Household", Currency: "EUR"},
+			request:      budgetRequest{Name: "  Household  ", Currency: " eur "},
 			wantName:     "Household",
 			wantCurrency: "EUR",
 		},
@@ -53,11 +44,6 @@ func TestBudgetRequestNormalizeAndValidate(t *testing.T) {
 		{
 			name:      "rejects non-letter currency",
 			request:   budgetRequest{Name: "Household", Currency: "E1R"},
-			wantError: true,
-		},
-		{
-			name:      "rejects negative target",
-			request:   budgetRequest{Name: "Household", Currency: "EUR", TargetMinor: &negativeTarget},
 			wantError: true,
 		},
 	}
@@ -91,7 +77,7 @@ func TestBudgetEndpointsCreateAndList(t *testing.T) {
 	createRequest := httptest.NewRequest(
 		http.MethodPost,
 		"/api/budgets",
-		bytes.NewBufferString(`{"name":"  Household  ","currency":" eur ","targetMinor":120000}`),
+		bytes.NewBufferString(`{"name":"  Household  ","currency":" eur "}`),
 	)
 	createRequest.Header.Set("Origin", testAppOrigin)
 	createRequest.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionID})
@@ -107,7 +93,7 @@ func TestBudgetEndpointsCreateAndList(t *testing.T) {
 		t.Fatalf("decode created budget: %v", err)
 	}
 
-	if created.Name != "Household" || created.Currency != "EUR" || created.TargetMinor == nil || *created.TargetMinor != 120000 {
+	if created.Name != "Household" || created.Currency != "EUR" {
 		t.Errorf("created budget = %#v, want normalized fields", created)
 	}
 
@@ -135,7 +121,7 @@ func TestGetBudgetDoesNotDiscloseOtherUsersBudget(t *testing.T) {
 	owner, _ := createHTTPTestUserSession(t, st, "budget-owner")
 	_, otherSessionID := createHTTPTestUserSession(t, st, "other-user")
 
-	budget, err := st.CreateBudget(t.Context(), owner.ID, "Household", "EUR", nil)
+	budget, err := st.CreateBudget(t.Context(), owner.ID, "Household", "EUR")
 	if err != nil {
 		t.Fatalf("create budget: %v", err)
 	}

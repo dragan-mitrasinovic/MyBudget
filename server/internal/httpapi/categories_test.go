@@ -58,7 +58,7 @@ func TestCategoryRequestNormalizeAndValidate(t *testing.T) {
 func TestCategoryEndpointsCreateAndMapDomainErrors(t *testing.T) {
 	st, handler := openHTTPTestServer(t, false)
 	user, sessionID := createHTTPTestUserSession(t, st, "category-owner")
-	budget, err := st.CreateBudget(t.Context(), user.ID, "Household", "EUR", nil)
+	budget, err := st.CreateBudget(t.Context(), user.ID, "Household", "EUR")
 	if err != nil {
 		t.Fatalf("create budget: %v", err)
 	}

@@ -12,12 +12,7 @@
 } @else if (budget(); as b) {
   <header class="detail-header">
     <h1 class="page-title">{{ b.name }}</h1>
-    <p class="meta">
-      <span>{{ b.currency }}</span>
-      @if (b.targetMinor !== null) {
-        <span>· Target {{ b.targetMinor | money: b.currency }}</span>
-      }
-    </p>
+    <p class="meta">{{ b.currency }}</p>
   </header>
 
   <mat-card appearance="outlined" class="section">

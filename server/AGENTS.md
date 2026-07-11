@@ -34,12 +34,28 @@ for project-wide context. The complete current HTTP contract is documented in
 
 ## Database migrations
 
-Schema history lives in `internal/store/migrations/` and follows ADR-0013.
+Schema history lives in `internal/store/migrations/` and follows ADR-0016.
+
+**Current lifecycle: active development, not prerelease.** The app has never been deployed and
+has no real users, so migration history is not yet a compatibility contract. Until the owner
+explicitly declares the project prerelease:
+
+- Give database additions, such as new tables, columns, constraints, or indexes, their own
+  contiguous migration.
+- Fold destructive or corrective schema changes into the existing migration that defines that
+  schema. Remove obsolete columns and tables from the baseline instead of adding drop migrations;
+  delete an obsolete later migration when appropriate and keep the remaining sequence contiguous.
+- Local development databases may need to be deleted and recreated after a rewritten migration.
+  Do not add compatibility migrations solely to preserve local development data.
+
+When the owner declares the project prerelease, this exception ends: freeze all existing
+migrations and use a new forward migration for every subsequent schema change, including drops,
+renames, and corrections.
 
 - **Read all existing migrations before changing the database schema.** Do not recreate schema
   definitions in Go or rely on `CREATE TABLE IF NOT EXISTS` outside the baseline migration.
-- **Never edit, rename, reorder, or delete an applied migration.** Add the next contiguous file
-  using `NNNN_lowercase_description.sql` (for example, `0002_add_expense_index.sql`).
+- Name new additive migrations using `NNNN_lowercase_description.sql` (for example,
+  `0002_add_expense_index.sql`).
 - Migrations are forward-only and run automatically during `store.Open`, one transaction per
   file. Do not put `BEGIN`, `COMMIT`, `ROLLBACK`, or `PRAGMA user_version` in migration SQL; the
   runner owns transaction and version management.
@@ -47,9 +63,9 @@ Schema history lives in `internal/store/migrations/` and follows ADR-0013.
   copy data explicitly, preserve foreign keys/indexes, and verify the resulting constraints.
 - Add or update focused migration tests for fresh setup, upgrades from the previous version,
   data preservation, and failure rollback. Run `go test ./internal/store` for every migration.
-- Back up persistent databases with SQLite's backup mechanism before applying production schema
-  changes. An application binary must not be deployed unless it contains every migration needed
-  by the target database.
+- After prerelease begins, back up persistent databases with SQLite's backup mechanism before
+  applying schema changes. An application binary must not be deployed unless it contains every
+  migration needed by the target database.
 - Update the relevant ADR when migration strategy changes. Update `API.md` only when the schema
   migration also changes observable HTTP behavior.
 

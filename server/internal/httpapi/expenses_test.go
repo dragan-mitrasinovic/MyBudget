@@ -73,12 +73,12 @@ func TestExpenseRequestNormalizeAndValidate(t *testing.T) {
 func TestExpenseEndpointsCreateListAndRejectWrongBudgetCategory(t *testing.T) {
 	st, handler := openHTTPTestServer(t, false)
 	user, sessionID := createHTTPTestUserSession(t, st, "expense-owner")
-	firstBudget, err := st.CreateBudget(t.Context(), user.ID, "First", "EUR", nil)
+	firstBudget, err := st.CreateBudget(t.Context(), user.ID, "First", "EUR")
 	if err != nil {
 		t.Fatalf("create first budget: %v", err)
 	}
 
-	secondBudget, err := st.CreateBudget(t.Context(), user.ID, "Second", "EUR", nil)
+	secondBudget, err := st.CreateBudget(t.Context(), user.ID, "Second", "EUR")
 	if err != nil {
 		t.Fatalf("create second budget: %v", err)
 	}

@@ -11,10 +11,9 @@ import (
 const maxNameLen = 100
 
 type budgetRequest struct {
-	Name        string `json:"name"`
-	Currency    string `json:"currency"`
-	TargetMinor *int64 `json:"targetMinor"`
-	Archived    bool   `json:"archived"`
+	Name     string `json:"name"`
+	Currency string `json:"currency"`
+	Archived bool   `json:"archived"`
 }
 
 // normalizeAndValidate trims and validates a budget payload in place.
@@ -28,10 +27,6 @@ func (req *budgetRequest) normalizeAndValidate() error {
 
 	if !matchesCurrencyCodeFormat(req.Currency) {
 		return fmt.Errorf("currency must be a 3-letter code")
-	}
-
-	if req.TargetMinor != nil && *req.TargetMinor < 0 {
-		return fmt.Errorf("target must not be negative")
 	}
 
 	return nil
@@ -84,7 +79,7 @@ func (srv *Server) handleCreateBudget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	budget, err := srv.store.CreateBudget(r.Context(), user.ID, req.Name, req.Currency, req.TargetMinor)
+	budget, err := srv.store.CreateBudget(r.Context(), user.ID, req.Name, req.Currency)
 	if err != nil {
 		http.Error(w, "could not create budget", http.StatusInternalServerError)
 		return
@@ -140,7 +135,7 @@ func (srv *Server) handleUpdateBudget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	budget, err := srv.store.UpdateBudget(r.Context(), user.ID, id, req.Name, req.Currency, req.TargetMinor, req.Archived)
+	budget, err := srv.store.UpdateBudget(r.Context(), user.ID, id, req.Name, req.Currency, req.Archived)
 	if err != nil {
 		http.Error(w, "could not update budget", http.StatusInternalServerError)
 		return

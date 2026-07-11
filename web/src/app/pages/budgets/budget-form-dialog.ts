@@ -38,10 +38,6 @@ export class BudgetFormDialog {
       Validators.maxLength(100),
     ]),
     currency: this.fb.nonNullable.control(this.budget?.currency ?? 'RSD', [Validators.required]),
-    target: this.fb.control<number | null>(
-      this.budget?.targetMinor != null ? this.budget.targetMinor / 100 : null,
-      [Validators.min(0)],
-    ),
   });
 
   cancel(): void {
@@ -54,11 +50,10 @@ export class BudgetFormDialog {
       return;
     }
 
-    const { name, currency, target } = this.form.getRawValue();
+    const { name, currency } = this.form.getRawValue();
     const input: BudgetInput = {
       name: name.trim(),
       currency,
-      targetMinor: target != null ? Math.round(target * 100) : null,
       // Preserve the current archived state; it isn't edited from this form.
       archived: this.budget?.archived ?? false,
     };

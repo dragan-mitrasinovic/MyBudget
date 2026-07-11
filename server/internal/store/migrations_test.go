@@ -8,7 +8,7 @@ import (
 	"testing/fstest"
 )
 
-func TestOpenAppliesInitialMigration(t *testing.T) {
+func TestOpenAppliesMigrations(t *testing.T) {
 	st := openTestStore(t)
 
 	if version := readDatabaseVersion(t, st.db); version != 1 {

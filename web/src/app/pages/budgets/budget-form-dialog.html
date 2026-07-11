@@ -18,22 +18,6 @@
         }
       </mat-select>
     </mat-form-field>
-
-    <mat-form-field appearance="outline" floatLabel="always">
-      <mat-label>Target (optional)</mat-label>
-      <input
-        matInput
-        type="number"
-        formControlName="target"
-        min="0"
-        step="0.01"
-        placeholder="0.00"
-      />
-      <span matTextPrefix>{{ form.controls.currency.value }}&nbsp;</span>
-      @if (form.controls.target.hasError('min')) {
-        <mat-error>Target must not be negative</mat-error>
-      }
-    </mat-form-field>
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">

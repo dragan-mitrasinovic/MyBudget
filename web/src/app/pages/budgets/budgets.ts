@@ -10,7 +10,6 @@ import { firstValueFrom } from 'rxjs';
 
 import { Budget, BudgetInput } from '../../core/budgets/budget.models';
 import { BudgetService } from '../../core/budgets/budget.service';
-import { MoneyPipe } from '../../core/budgets/money.pipe';
 import { ConfirmDialog, ConfirmData } from '../../shared/confirm-dialog/confirm-dialog';
 import { BudgetFormDialog } from './budget-form-dialog';
 
@@ -23,7 +22,6 @@ import { BudgetFormDialog } from './budget-form-dialog';
     MatIconModule,
     MatMenuModule,
     MatProgressSpinnerModule,
-    MoneyPipe,
   ],
   templateUrl: './budgets.html',
   styleUrl: './budgets.scss',

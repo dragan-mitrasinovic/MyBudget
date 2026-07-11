@@ -50,7 +50,7 @@ func TestBudgetOperationsAreScopedToOwner(t *testing.T) {
 		t.Fatalf("get budget as other user = %#v, want nil", got)
 	}
 
-	updated, err := st.UpdateBudget(ctx, otherUser.ID, budget.ID, "Changed", "USD", nil, true)
+	updated, err := st.UpdateBudget(ctx, otherUser.ID, budget.ID, "Changed", "USD", true)
 	if err != nil {
 		t.Fatalf("update budget as other user: %v", err)
 	}

@@ -97,15 +97,14 @@ returned.
   "id": 12,
   "name": "Household",
   "currency": "EUR",
-  "targetMinor": 120000,
   "archived": false,
   "createdAt": "2026-07-11T08:30:00Z",
   "updatedAt": "2026-07-11T08:30:00Z"
 }
 ```
 
-`targetMinor` may be `null`. `createdAt` and `updatedAt` are UTC RFC 3339 timestamps. `userId` is
-internal and is not returned.
+`createdAt` and `updatedAt` are UTC RFC 3339 timestamps. `userId` is internal and is not
+returned.
 
 ### Category
 
@@ -153,7 +152,6 @@ Each budget has one currency shared by all its expenses. Currency input is trimm
 to uppercase. The current validation checks exactly three ASCII letters (`A-Z`); it does not
 validate against a complete ISO 4217 table.
 
-- `targetMinor` is optional and must be zero or greater when present.
 - `amountMinor` is required and must be greater than zero.
 
 ### Names and notes
@@ -286,8 +284,7 @@ Request:
 ```json
 {
   "name": "Household",
-  "currency": "EUR",
-  "targetMinor": 120000
+  "currency": "EUR"
 }
 ```
 
@@ -295,7 +292,6 @@ Fields:
 
 - `name`: required; trimmed; 1-100 bytes.
 - `currency`: required; trimmed, uppercased, and exactly three ASCII letters.
-- `targetMinor`: optional; integer zero or greater; omit or send `null` for no target.
 
 A new budget always has `archived: false`; `archived` is not a create-time field.
 
@@ -331,13 +327,11 @@ Request:
 {
   "name": "Household 2026",
   "currency": "EUR",
-  "targetMinor": null,
   "archived": false
 }
 ```
 
-`name` and `currency` are required. `targetMinor` may be `null`; `archived` is a boolean. The
-server refreshes `updatedAt`.
+`name` and `currency` are required; `archived` is a boolean. The server refreshes `updatedAt`.
 
 Success: `200 OK` with the updated Budget.
 

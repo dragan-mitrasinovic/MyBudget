@@ -19,7 +19,7 @@ func createStoreTestUser(t *testing.T, st *Store, sub string) *User {
 func createStoreTestBudget(t *testing.T, st *Store, userID int64, name string) *Budget {
 	t.Helper()
 
-	budget, err := st.CreateBudget(context.Background(), userID, name, "EUR", nil)
+	budget, err := st.CreateBudget(context.Background(), userID, name, "EUR")
 	if err != nil {
 		t.Fatalf("create test budget: %v", err)
 	}

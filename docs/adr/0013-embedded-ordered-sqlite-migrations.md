@@ -1,7 +1,7 @@
 # 0013. Embedded ordered SQLite migrations
 
 Date: 2026-07-11
-Status: Accepted
+Status: Superseded by ADR-0016
 
 ## Context
 
