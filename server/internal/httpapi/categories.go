@@ -1,4 +1,4 @@
-package main
+package httpapi
 
 import (
 	"encoding/json"
@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/dragan-mitrasinovic/MyBudget/server/internal/store"
 )
 
 type categoryRequest struct {
@@ -17,7 +19,7 @@ func (req *categoryRequest) normalize() error {
 	req.Name = strings.TrimSpace(req.Name)
 
 	if req.Name == "" || len(req.Name) > maxNameLen {
-		return fmt.Errorf("name must be 1–%d characters", maxNameLen)
+		return fmt.Errorf("name must be 1-%d characters", maxNameLen)
 	}
 
 	return nil
@@ -41,7 +43,7 @@ func (srv *Server) handleListCategories(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Every real budget has at least its Uncategorized category, so an empty result
-	// means the budget doesn't exist or isn't the caller's.
+	// means the budget does not exist or is not the caller's.
 	if len(categories) == 0 {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
@@ -134,11 +136,11 @@ func (srv *Server) handleDeleteCategory(w http.ResponseWriter, r *http.Request) 
 // writeCategoryError maps the category data-layer sentinel errors to HTTP responses.
 func writeCategoryError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, errNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		http.Error(w, "not found", http.StatusNotFound)
-	case errors.Is(err, errSystemCategory):
+	case errors.Is(err, store.ErrSystemCategory):
 		http.Error(w, "the Uncategorized category cannot be modified", http.StatusForbidden)
-	case errors.Is(err, errDuplicateName):
+	case errors.Is(err, store.ErrDuplicateName):
 		http.Error(w, "a category with that name already exists", http.StatusConflict)
 	default:
 		http.Error(w, "could not save category", http.StatusInternalServerError)

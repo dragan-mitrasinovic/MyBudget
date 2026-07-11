@@ -1,22 +1,12 @@
-package main
+package store
 
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"strings"
 	"time"
 )
 
-// Sentinel errors from the category data methods, mapped to HTTP status codes by the
-// handlers.
-var (
-	errNotFound       = errors.New("not found")
-	errSystemCategory = errors.New("cannot modify the system category")
-	errDuplicateName  = errors.New("name already exists")
-)
-
-// Category is a per-budget grouping for expenses. Every budget owns one is_system row
+// Category is a per-budget grouping for expenses. Every budget owns one IsSystem row
 // ("Uncategorized") that cannot be renamed or deleted.
 type Category struct {
 	ID        int64  `json:"id"`
@@ -28,7 +18,7 @@ type Category struct {
 
 // ListCategories returns a budget's categories (user categories first, Uncategorized last)
 // scoped to the owner. An empty result means the budget does not exist or is not the
-// caller's — every real budget has at least its Uncategorized category.
+// caller's because every real budget has at least its Uncategorized category.
 func (s *Store) ListCategories(ctx context.Context, userID, budgetID int64) ([]Category, error) {
 	const query = `
 		SELECT c.id, c.budget_id, c.name, c.is_system, c.created_at
@@ -56,8 +46,8 @@ func (s *Store) ListCategories(ctx context.Context, userID, budgetID int64) ([]C
 	return categories, rows.Err()
 }
 
-// CreateCategory adds a user category to a budget the caller owns. It returns errNotFound
-// when the budget is not the user's, or errDuplicateName on a name clash.
+// CreateCategory adds a user category to a budget the caller owns. It returns ErrNotFound
+// when the budget is not the user's, or ErrDuplicateName on a name clash.
 func (s *Store) CreateCategory(ctx context.Context, userID, budgetID int64, name string) (*Category, error) {
 	owned, err := s.budgetOwnedByUser(ctx, userID, budgetID)
 	if err != nil {
@@ -65,7 +55,7 @@ func (s *Store) CreateCategory(ctx context.Context, userID, budgetID int64, name
 	}
 
 	if !owned {
-		return nil, errNotFound
+		return nil, ErrNotFound
 	}
 
 	const query = `
@@ -76,7 +66,7 @@ func (s *Store) CreateCategory(ctx context.Context, userID, budgetID int64, name
 	res, err := s.db.ExecContext(ctx, query, budgetID, name, now)
 	if err != nil {
 		if isUniqueViolation(err) {
-			return nil, errDuplicateName
+			return nil, ErrDuplicateName
 		}
 
 		return nil, err
@@ -90,8 +80,8 @@ func (s *Store) CreateCategory(ctx context.Context, userID, budgetID int64, name
 	return &Category{ID: id, BudgetID: budgetID, Name: name, IsSystem: false, CreatedAt: now}, nil
 }
 
-// UpdateCategory renames a user category the caller owns. It returns errNotFound,
-// errSystemCategory (the Uncategorized row is immutable), or errDuplicateName.
+// UpdateCategory renames a user category the caller owns. It returns ErrNotFound,
+// ErrSystemCategory (the Uncategorized row is immutable), or ErrDuplicateName.
 func (s *Store) UpdateCategory(ctx context.Context, userID, categoryID int64, name string) (*Category, error) {
 	cat, err := s.categoryForUser(ctx, userID, categoryID)
 	if err != nil {
@@ -99,11 +89,11 @@ func (s *Store) UpdateCategory(ctx context.Context, userID, categoryID int64, na
 	}
 
 	if cat == nil {
-		return nil, errNotFound
+		return nil, ErrNotFound
 	}
 
 	if cat.IsSystem {
-		return nil, errSystemCategory
+		return nil, ErrSystemCategory
 	}
 
 	const query = `
@@ -113,7 +103,7 @@ func (s *Store) UpdateCategory(ctx context.Context, userID, categoryID int64, na
 
 	if _, err := s.db.ExecContext(ctx, query, name, categoryID); err != nil {
 		if isUniqueViolation(err) {
-			return nil, errDuplicateName
+			return nil, ErrDuplicateName
 		}
 
 		return nil, err
@@ -142,7 +132,7 @@ func (s *Store) DeleteCategory(ctx context.Context, userID, categoryID int64) er
 
 	err = tx.QueryRowContext(ctx, lookup, categoryID, userID).Scan(&budgetID, &isSystem)
 	if err == sql.ErrNoRows {
-		return errNotFound
+		return ErrNotFound
 	}
 
 	if err != nil {
@@ -150,7 +140,7 @@ func (s *Store) DeleteCategory(ctx context.Context, userID, categoryID int64) er
 	}
 
 	if isSystem {
-		return errSystemCategory
+		return ErrSystemCategory
 	}
 
 	var uncategorizedID int64
@@ -217,9 +207,4 @@ func (s *Store) budgetOwnedByUser(ctx context.Context, userID, budgetID int64) (
 	}
 
 	return true, nil
-}
-
-// isUniqueViolation reports whether err is a SQLite UNIQUE constraint failure.
-func isUniqueViolation(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed")
 }

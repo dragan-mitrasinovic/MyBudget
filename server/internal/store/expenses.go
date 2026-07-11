@@ -1,17 +1,13 @@
-package main
+package store
 
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
 )
 
-// errInvalidCategory means the referenced category is not part of the target budget.
-var errInvalidCategory = errors.New("category does not belong to this budget")
-
 // Expense is a single dated spend within a category. The owning budget is reached through
-// the category (there is no budget_id column) — see ADR-0011.
+// the category (there is no budget_id column) -- see ADR-0011.
 type Expense struct {
 	ID          int64  `json:"id"`
 	CategoryID  int64  `json:"categoryId"`
@@ -30,7 +26,7 @@ type ExpenseFilter struct {
 }
 
 // ListExpenses returns a budget's expenses (newest first) scoped to the owner, optionally
-// filtered. It returns errNotFound if the budget is not the caller's.
+// filtered. It returns ErrNotFound if the budget is not the caller's.
 func (s *Store) ListExpenses(ctx context.Context, userID, budgetID int64, filter ExpenseFilter) ([]Expense, error) {
 	owned, err := s.budgetOwnedByUser(ctx, userID, budgetID)
 	if err != nil {
@@ -38,7 +34,7 @@ func (s *Store) ListExpenses(ctx context.Context, userID, budgetID int64, filter
 	}
 
 	if !owned {
-		return nil, errNotFound
+		return nil, ErrNotFound
 	}
 
 	query := `
@@ -133,7 +129,7 @@ func (s *Store) UpdateExpense(ctx context.Context, userID, expenseID, categoryID
 	return s.expenseByID(ctx, expenseID)
 }
 
-// DeleteExpense removes an expense the caller owns, reporting errNotFound otherwise.
+// DeleteExpense removes an expense the caller owns, reporting ErrNotFound otherwise.
 func (s *Store) DeleteExpense(ctx context.Context, userID, expenseID int64) error {
 	const query = `
 		DELETE FROM expenses
@@ -155,14 +151,14 @@ func (s *Store) DeleteExpense(ctx context.Context, userID, expenseID int64) erro
 	}
 
 	if n == 0 {
-		return errNotFound
+		return ErrNotFound
 	}
 
 	return nil
 }
 
 // checkCategoryInBudget verifies the budget belongs to the user and the category is in it,
-// returning errNotFound or errInvalidCategory respectively.
+// returning ErrNotFound or ErrInvalidCategory respectively.
 func (s *Store) checkCategoryInBudget(ctx context.Context, userID, budgetID, categoryID int64) error {
 	owned, err := s.budgetOwnedByUser(ctx, userID, budgetID)
 	if err != nil {
@@ -170,14 +166,14 @@ func (s *Store) checkCategoryInBudget(ctx context.Context, userID, budgetID, cat
 	}
 
 	if !owned {
-		return errNotFound
+		return ErrNotFound
 	}
 
 	var one int
 	err = s.db.QueryRowContext(ctx, `SELECT 1 FROM categories WHERE id = ? AND budget_id = ?`, categoryID, budgetID).
 		Scan(&one)
 	if err == sql.ErrNoRows {
-		return errInvalidCategory
+		return ErrInvalidCategory
 	}
 
 	if err != nil {
@@ -187,7 +183,7 @@ func (s *Store) checkCategoryInBudget(ctx context.Context, userID, budgetID, cat
 	return nil
 }
 
-// expenseBudget returns the budget id of an expense owned by the user, or errNotFound.
+// expenseBudget returns the budget id of an expense owned by the user, or ErrNotFound.
 func (s *Store) expenseBudget(ctx context.Context, userID, expenseID int64) (int64, error) {
 	const query = `
 		SELECT c.budget_id
@@ -199,7 +195,7 @@ func (s *Store) expenseBudget(ctx context.Context, userID, expenseID int64) (int
 	var budgetID int64
 	err := s.db.QueryRowContext(ctx, query, expenseID, userID).Scan(&budgetID)
 	if err == sql.ErrNoRows {
-		return 0, errNotFound
+		return 0, ErrNotFound
 	}
 
 	if err != nil {

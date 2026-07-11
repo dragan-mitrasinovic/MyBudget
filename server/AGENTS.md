@@ -4,6 +4,16 @@ The Go HTTP API backend for MyBudget. Standard-library `net/http`, SQLite via
 `modernc.org/sqlite`. See the root [AGENTS.md](../AGENTS.md) and [docs/adr/](../docs/adr/)
 for project-wide context.
 
+## Package layout
+
+- `cmd/mybudget/main.go` is the executable composition root: configuration, dependency
+  construction, resource lifecycle, and HTTP startup only.
+- `internal/httpapi/` owns HTTP routing, cookies, request validation, response mapping, and
+  handlers.
+- `internal/store/` owns SQLite setup, schema creation, models, and all SQL queries.
+- Dependencies point inward from `cmd/mybudget` to `httpapi` and `store`; `httpapi` may use
+  `store`, but `store` must not import the HTTP package.
+
 ## Go coding style
 
 Conventions for this folder, applied on top of `gofmt`:

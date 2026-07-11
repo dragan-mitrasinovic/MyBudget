@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/dragan-mitrasinovic/MyBudget/server/internal/httpapi"
+	"github.com/dragan-mitrasinovic/MyBudget/server/internal/store"
 )
 
 func main() {
@@ -25,50 +28,26 @@ func main() {
 		log.Fatal("DEV_AUTH must not be enabled with SECURE_COOKIES=true")
 	}
 
-	store, err := OpenStore(dbPath)
+	st, err := store.Open(dbPath)
 	if err != nil {
 		log.Fatalf("open store: %v", err)
 	}
+	defer func() {
+		if err := st.Close(); err != nil {
+			log.Printf("close store: %v", err)
+		}
+	}()
 
-	srv := &Server{
-		store:          store,
-		googleClientID: clientID,
-		secureCookies:  secureCookies,
-		sessionTTL:     sessionTTL,
-	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/auth/google", srv.handleGoogleLogin)
-	mux.HandleFunc("GET /api/me", srv.handleMe)
-	mux.HandleFunc("POST /api/auth/logout", srv.handleLogout)
-
-	mux.HandleFunc("GET /api/budgets", srv.handleListBudgets)
-	mux.HandleFunc("POST /api/budgets", srv.handleCreateBudget)
-	mux.HandleFunc("GET /api/budgets/{id}", srv.handleGetBudget)
-	mux.HandleFunc("PATCH /api/budgets/{id}", srv.handleUpdateBudget)
-	mux.HandleFunc("DELETE /api/budgets/{id}", srv.handleDeleteBudget)
-
-	mux.HandleFunc("GET /api/budgets/{id}/categories", srv.handleListCategories)
-	mux.HandleFunc("POST /api/budgets/{id}/categories", srv.handleCreateCategory)
-	mux.HandleFunc("PATCH /api/categories/{id}", srv.handleUpdateCategory)
-	mux.HandleFunc("DELETE /api/categories/{id}", srv.handleDeleteCategory)
-
-	mux.HandleFunc("GET /api/budgets/{id}/expenses", srv.handleListExpenses)
-	mux.HandleFunc("POST /api/budgets/{id}/expenses", srv.handleCreateExpense)
-	mux.HandleFunc("PATCH /api/expenses/{id}", srv.handleUpdateExpense)
-	mux.HandleFunc("DELETE /api/expenses/{id}", srv.handleDeleteExpense)
-
-	// Dev-only dummy-login shortcut (see ADR-0010), enabled with DEV_AUTH=true so that
-	// local and automated testing can reach authenticated screens without Google sign-in.
-	if devAuth {
-		log.Println("⚠  DEV AUTH ENABLED — /api/dev/login mints a session for a dummy user")
-		mux.HandleFunc("POST /api/dev/login", srv.handleDevLogin)
-		mux.HandleFunc("GET /api/dev/login", srv.handleDevLogin)
-	}
+	handler := httpapi.New(st, httpapi.Config{
+		GoogleClientID: clientID,
+		SecureCookies:  secureCookies,
+		SessionTTL:     sessionTTL,
+		DevAuth:        devAuth,
+	})
 
 	addr := ":" + port
 	log.Printf("MyBudget API listening on %s (db=%s, secureCookies=%v)", addr, dbPath, secureCookies)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := http.ListenAndServe(addr, handler); err != nil {
 		log.Fatal(err)
 	}
 }

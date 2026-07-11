@@ -1,4 +1,4 @@
-package main
+package store
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 // other category reassigns its expenses here.
 const uncategorizedCategoryName = "Uncategorized"
 
-// Budget is a user-owned container for categories and expenses. user_id is internal and
+// Budget is a user-owned container for categories and expenses. UserID is internal and
 // never serialized to clients.
 type Budget struct {
 	ID          int64  `json:"id"`

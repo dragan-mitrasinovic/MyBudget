@@ -1,44 +1,14 @@
-package main
+package httpapi
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
 // maxNameLen bounds user-provided names (budgets, categories) to keep inputs sane.
 const maxNameLen = 100
-
-// requireUser resolves the session user, writing the appropriate error response and
-// returning nil when the request is unauthenticated or lookup fails.
-func (srv *Server) requireUser(w http.ResponseWriter, r *http.Request) *User {
-	user, err := srv.currentUser(r)
-	if err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
-		return nil
-	}
-
-	if user == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return nil
-	}
-
-	return user
-}
-
-// parsePathID reads a positive integer path value, writing 400 and returning false on
-// anything else.
-func parsePathID(w http.ResponseWriter, r *http.Request, name string) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue(name), 10, 64)
-	if err != nil || id <= 0 {
-		http.Error(w, "invalid id", http.StatusBadRequest)
-		return 0, false
-	}
-
-	return id, true
-}
 
 type budgetRequest struct {
 	Name        string `json:"name"`
@@ -53,7 +23,7 @@ func (req *budgetRequest) normalize() error {
 	req.Currency = strings.ToUpper(strings.TrimSpace(req.Currency))
 
 	if req.Name == "" || len(req.Name) > maxNameLen {
-		return fmt.Errorf("name must be 1–%d characters", maxNameLen)
+		return fmt.Errorf("name must be 1-%d characters", maxNameLen)
 	}
 
 	if !isCurrencyCode(req.Currency) {
@@ -67,7 +37,7 @@ func (req *budgetRequest) normalize() error {
 	return nil
 }
 
-// isCurrencyCode does a shape check (three A–Z letters); it is not a full ISO-4217 table.
+// isCurrencyCode does a shape check (three A-Z letters); it is not a full ISO-4217 table.
 func isCurrencyCode(code string) bool {
 	if len(code) != 3 {
 		return false

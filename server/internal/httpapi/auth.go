@@ -1,21 +1,13 @@
-package main
+package httpapi
 
 import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"time"
 
+	"github.com/dragan-mitrasinovic/MyBudget/server/internal/store"
 	"google.golang.org/api/idtoken"
 )
-
-// Server holds the dependencies and config shared by the HTTP handlers.
-type Server struct {
-	store          *Store
-	googleClientID string
-	secureCookies  bool
-	sessionTTL     time.Duration
-}
 
 const sessionCookieName = "session"
 
@@ -93,7 +85,7 @@ func (srv *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 
 // currentUser resolves the session cookie to a user, returning (nil, nil) when there
 // is no cookie or the session is invalid/expired.
-func (srv *Server) currentUser(r *http.Request) (*User, error) {
+func (srv *Server) currentUser(r *http.Request) (*store.User, error) {
 	c, err := r.Cookie(sessionCookieName)
 	if err != nil {
 		if errors.Is(err, http.ErrNoCookie) {
@@ -128,10 +120,4 @@ func (srv *Server) clearSessionCookie(w http.ResponseWriter) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
 }

@@ -1,4 +1,4 @@
-package main
+package httpapi
 
 import (
 	"encoding/json"
@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/dragan-mitrasinovic/MyBudget/server/internal/store"
 )
 
 // maxNoteLen bounds the free-text note on an expense.
@@ -60,7 +62,7 @@ func (srv *Server) handleListExpenses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filter := ExpenseFilter{
+	filter := store.ExpenseFilter{
 		From: r.URL.Query().Get("from"),
 		To:   r.URL.Query().Get("to"),
 	}
@@ -172,9 +174,9 @@ func (srv *Server) handleDeleteExpense(w http.ResponseWriter, r *http.Request) {
 // writeExpenseError maps the expense data-layer sentinel errors to HTTP responses.
 func writeExpenseError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, errNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		http.Error(w, "not found", http.StatusNotFound)
-	case errors.Is(err, errInvalidCategory):
+	case errors.Is(err, store.ErrInvalidCategory):
 		http.Error(w, "category does not belong to this budget", http.StatusBadRequest)
 	default:
 		http.Error(w, "server error", http.StatusInternalServerError)
