@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/dragan-mitrasinovic/MyBudget/server/internal/httpapi"
@@ -11,6 +12,11 @@ import (
 )
 
 func main() {
+	isDevelopment, err := strconv.ParseBool(os.Getenv("IS_DEVELOPMENT"))
+	if err != nil {
+		log.Fatalf("IS_DEVELOPMENT must be true or false: %v", err)
+	}
+
 	clientID := os.Getenv("GOOGLE_CLIENT_ID")
 	if clientID == "" {
 		log.Fatal("GOOGLE_CLIENT_ID is required")
@@ -18,15 +24,7 @@ func main() {
 
 	port := getenv("PORT", "8080")
 	dbPath := getenv("DB_PATH", "./mybudget.db")
-	secureCookies := getenv("SECURE_COOKIES", "false") == "true"
 	sessionTTL := parseTTL(getenv("SESSION_TTL", "720h"))
-	devAuth := getenv("DEV_AUTH", "false") == "true"
-
-	// The dummy-login shortcut is a full auth bypass; never let it run in a production
-	// configuration. SECURE_COOKIES=true is our signal for "this is production".
-	if devAuth && secureCookies {
-		log.Fatal("DEV_AUTH must not be enabled with SECURE_COOKIES=true")
-	}
 
 	st, err := store.Open(dbPath)
 	if err != nil {
@@ -40,13 +38,12 @@ func main() {
 
 	handler := httpapi.New(st, httpapi.Config{
 		GoogleClientID: clientID,
-		SecureCookies:  secureCookies,
 		SessionTTL:     sessionTTL,
-		DevAuth:        devAuth,
+		IsDevelopment:  isDevelopment,
 	})
 
 	addr := ":" + port
-	log.Printf("MyBudget API listening on %s (db=%s, secureCookies=%v)", addr, dbPath, secureCookies)
+	log.Printf("MyBudget API listening on %s (db=%s, development=%v)", addr, dbPath, isDevelopment)
 	if err := http.ListenAndServe(addr, handler); err != nil {
 		log.Fatal(err)
 	}

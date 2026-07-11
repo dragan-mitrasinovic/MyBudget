@@ -18,6 +18,10 @@ for project-wide context.
 
 Conventions for this folder, applied on top of `gofmt`:
 
+- **Boolean names are predicates.** Name booleans so they read as yes/no questions, using
+  prefixes such as `is`, `has`, `can`, `should`, `use`, or `enable` (for example,
+  `isDevelopment` and `useSecureCookies`), rather than vague state names.
+
 - **Blank line after an `if` block.** Leave one empty line after an `if` statement's
   closing `}` when more code follows in the same block. Skip it only when the next line
   is the enclosing block's own closing `}`.

@@ -11,7 +11,7 @@ help:
 	@echo "make check      fmt-check + lint (run before committing)"
 	@echo ""
 	@echo "Local dev (not part of the gate):"
-	@echo "make dev-api    run the Go API with real Google login + the dev dummy-login route (DEV_AUTH=true)"
+	@echo "make dev-api    run the Go API in development mode (real Google + dummy login)"
 	@echo "make dev-web    run the Angular dev server (proxies /api to the API)"
 
 fmt:
@@ -42,9 +42,9 @@ check: fmt-check lint
 # Run the two processes in separate terminals, then open http://localhost:4200.
 # dev-api uses the real Google client ID (matching the web app's dev config) so real
 # "Sign in with Google" works locally, and *also* keeps the dev-only dummy-login route
-# enabled (DEV_AUTH=true) so agents/automation can sign in headlessly via /api/dev/login.
+# enabled (IS_DEVELOPMENT=true) so agents/automation can sign in headlessly via /api/dev/login.
 dev-api:
-	cd server && GOOGLE_CLIENT_ID=923945549782-d0tr117jt1lo0i4u2r5aq783flp7uo3g.apps.googleusercontent.com DEV_AUTH=true go run ./cmd/mybudget
+	cd server && IS_DEVELOPMENT=true GOOGLE_CLIENT_ID=923945549782-d0tr117jt1lo0i4u2r5aq783flp7uo3g.apps.googleusercontent.com go run ./cmd/mybudget
 
 dev-web:
 	cd web && npm start

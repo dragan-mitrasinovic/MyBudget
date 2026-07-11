@@ -9,12 +9,7 @@ import (
 
 // New wires the API routes and returns the complete HTTP handler.
 func New(st *store.Store, cfg Config) http.Handler {
-	srv := &Server{
-		store:          st,
-		googleClientID: cfg.GoogleClientID,
-		secureCookies:  cfg.SecureCookies,
-		sessionTTL:     cfg.SessionTTL,
-	}
+	srv := newServer(st, cfg)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/auth/google", srv.handleGoogleLogin)
@@ -38,11 +33,20 @@ func New(st *store.Store, cfg Config) http.Handler {
 	mux.HandleFunc("DELETE /api/expenses/{id}", srv.handleDeleteExpense)
 
 	// The local and automated-testing shortcut is registered only when explicitly enabled.
-	if cfg.DevAuth {
+	if cfg.IsDevelopment {
 		log.Println("⚠  DEV AUTH ENABLED — /api/dev/login mints a session for a dummy user")
 		mux.HandleFunc("POST /api/dev/login", srv.handleDevLogin)
 		mux.HandleFunc("GET /api/dev/login", srv.handleDevLogin)
 	}
 
 	return mux
+}
+
+func newServer(st *store.Store, cfg Config) *Server {
+	return &Server{
+		store:            st,
+		googleClientID:   cfg.GoogleClientID,
+		useSecureCookies: !cfg.IsDevelopment,
+		sessionTTL:       cfg.SessionTTL,
+	}
 }

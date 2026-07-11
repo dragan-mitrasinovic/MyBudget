@@ -1,7 +1,7 @@
 # 0010. Dev-only dummy-user login for local testing
 
 Date: 2026-07-02
-Status: Accepted
+Status: Superseded by ADR-0012
 
 ## Context
 

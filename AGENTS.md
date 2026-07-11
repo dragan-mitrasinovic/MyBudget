@@ -49,18 +49,19 @@ deps via `npm ci`) and run `lefthook install` so the commit hook is active.
 
 Two processes, then open http://localhost:4200:
 
-- `make dev-api` — the Go API on :8080, **with the dev-only dummy-login route** (`DEV_AUTH=true`).
+- `make dev-api` — the Go API on :8080 in development mode (`IS_DEVELOPMENT=true`),
+  with the dev-only dummy-login route and non-Secure localhost session cookies.
 - `make dev-web` — the Angular dev server, which proxies `/api` to the API.
 
 **Signing in without Google (dummy user).** The app is behind Google sign-in (ADR-0006), which
 can't be completed headlessly. With `make dev-api` running, mint a session for a fixed **Dev
 User** by visiting `http://localhost:4200/api/dev/login` once, then open
-`http://localhost:4200/`. This shortcut is enabled only by `DEV_AUTH=true` (which `make
-dev-api` sets); the server refuses to start with it in a production config — see
-[ADR-0010](docs/adr/0010-dev-dummy-user-login.md).
+`http://localhost:4200/`. This shortcut exists only when `IS_DEVELOPMENT=true` (which `make
+dev-api` sets). With `IS_DEVELOPMENT=false`, the route is absent and session cookies are
+Secure — see [ADR-0012](docs/adr/0012-single-application-environment-mode.md).
 
-**Check UI work in the browser.** A green build and green lint don't prove a screen *looks*
+**Check UI work in the browser.** A green build and green lint don't prove a screen _looks_
 right. After a UI change, open the affected page, read its accessibility snapshot
 (structure/interaction) and take a screenshot (layout/spacing/theme), and fix what you see —
-overlap, overflow, off-theme colours, broken images. This catches *broken*; taste and
+overlap, overflow, off-theme colours, broken images. This catches _broken_; taste and
 aesthetics still need a human eye.

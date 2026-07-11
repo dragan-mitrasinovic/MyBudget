@@ -104,7 +104,7 @@ func (srv *Server) setSessionCookie(w http.ResponseWriter, sessionID string) {
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   srv.secureCookies,
+		Secure:   srv.useSecureCookies,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(srv.sessionTTL.Seconds()),
 	})
@@ -116,7 +116,7 @@ func (srv *Server) clearSessionCookie(w http.ResponseWriter) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   srv.secureCookies,
+		Secure:   srv.useSecureCookies,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})
