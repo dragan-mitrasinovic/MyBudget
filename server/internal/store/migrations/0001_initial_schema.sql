@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     category_id  INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     amount_minor INTEGER NOT NULL,
-    note         TEXT NOT NULL,
+    description  TEXT NOT NULL,
     spent_at     TEXT NOT NULL,
     created_at   TEXT NOT NULL,
     updated_at   TEXT NOT NULL

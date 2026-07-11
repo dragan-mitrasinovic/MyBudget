@@ -20,6 +20,10 @@ func TestOpenAppliesMigrations(t *testing.T) {
 			t.Errorf("table %q does not exist", table)
 		}
 	}
+
+	if !columnExists(t, st.db, "expenses", "description") {
+		t.Error("expenses.description column does not exist")
+	}
 }
 
 func TestOpenAdoptsExistingUnversionedSchemaWithoutDataLoss(t *testing.T) {
@@ -220,6 +224,18 @@ func tableExists(t *testing.T, db *sql.DB, table string) bool {
 	const query = `SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?`
 	if err := db.QueryRow(query, table).Scan(&count); err != nil {
 		t.Fatalf("check table %q: %v", table, err)
+	}
+
+	return count == 1
+}
+
+func columnExists(t *testing.T, db *sql.DB, table, column string) bool {
+	t.Helper()
+
+	var count int
+	const query = `SELECT COUNT(*) FROM pragma_table_info(?) WHERE name = ?`
+	if err := db.QueryRow(query, table, column).Scan(&count); err != nil {
+		t.Fatalf("check column %q.%q: %v", table, column, err)
 	}
 
 	return count == 1

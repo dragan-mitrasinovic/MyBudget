@@ -55,7 +55,8 @@ export class Budgets implements OnInit {
         .afterClosed(),
     );
     if (result) {
-      await this.service.create(result);
+      const budget = await this.service.create(result);
+      this.open(budget);
     }
   }
 

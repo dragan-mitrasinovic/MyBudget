@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -11,6 +11,17 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Category } from '../../core/budgets/category.models';
 import { Expense, ExpenseInput } from '../../core/budgets/expense.models';
 import { ExpenseService } from '../../core/budgets/expense.service';
+
+const maxDescriptionLength = 120;
+
+function maxCodePointLength(maxLength: number): ValidatorFn {
+  return (control) => {
+    const actualLength = Array.from(String(control.value ?? '').trim()).length;
+    return actualLength > maxLength
+      ? { maxlength: { requiredLength: maxLength, actualLength } }
+      : null;
+  };
+}
 
 export interface ExpenseDialogData {
   budgetId: number;
@@ -74,7 +85,9 @@ export class ExpenseFormDialog {
       this.data.expense ? parseDate(this.data.expense.spentAt) : new Date(),
       [Validators.required],
     ),
-    note: this.fb.nonNullable.control(this.data.expense?.note ?? '', [Validators.maxLength(500)]),
+    description: this.fb.nonNullable.control(this.data.expense?.description ?? '', [
+      maxCodePointLength(maxDescriptionLength),
+    ]),
   });
 
   cancel(): void {
@@ -90,7 +103,7 @@ export class ExpenseFormDialog {
   /** Save and keep the dialog open for the next entry (add mode only). */
   async submitAndAddAnother(): Promise<void> {
     if (await this.persist()) {
-      this.form.patchValue({ amount: null, note: '' });
+      this.form.patchValue({ amount: null, description: '' });
       this.form.controls.amount.markAsUntouched();
     }
   }
@@ -101,11 +114,11 @@ export class ExpenseFormDialog {
       return false;
     }
 
-    const { categoryId, amount, date, note } = this.form.getRawValue();
+    const { categoryId, amount, date, description } = this.form.getRawValue();
     const input: ExpenseInput = {
       categoryId,
       amountMinor: Math.round((amount ?? 0) * 100),
-      note: note.trim(),
+      description: description.trim(),
       spentAt: formatDate(date),
     };
 

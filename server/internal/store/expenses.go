@@ -12,7 +12,7 @@ type Expense struct {
 	ID          int64  `json:"id"`
 	CategoryID  int64  `json:"categoryId"`
 	AmountMinor int64  `json:"amountMinor"`
-	Note        string `json:"note"`
+	Description string `json:"description"`
 	SpentAt     string `json:"spentAt"`
 	CreatedAt   string `json:"createdAt"`
 	UpdatedAt   string `json:"updatedAt"`
@@ -38,7 +38,7 @@ func (s *Store) ListExpenses(ctx context.Context, userID, budgetID int64, filter
 	}
 
 	query := `
-		SELECT e.id, e.category_id, e.amount_minor, e.note, e.spent_at, e.created_at, e.updated_at
+		SELECT e.id, e.category_id, e.amount_minor, e.description, e.spent_at, e.created_at, e.updated_at
 		FROM expenses e
 		JOIN categories c ON c.id = e.category_id
 		WHERE c.budget_id = ?`
@@ -70,7 +70,7 @@ func (s *Store) ListExpenses(ctx context.Context, userID, budgetID int64, filter
 	expenses := []Expense{}
 	for rows.Next() {
 		var e Expense
-		if err := rows.Scan(&e.ID, &e.CategoryID, &e.AmountMinor, &e.Note, &e.SpentAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.CategoryID, &e.AmountMinor, &e.Description, &e.SpentAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, err
 		}
 
@@ -81,17 +81,17 @@ func (s *Store) ListExpenses(ctx context.Context, userID, budgetID int64, filter
 }
 
 // CreateExpense adds an expense to a category that belongs to a budget the caller owns.
-func (s *Store) CreateExpense(ctx context.Context, userID, budgetID, categoryID, amountMinor int64, note, spentAt string) (*Expense, error) {
+func (s *Store) CreateExpense(ctx context.Context, userID, budgetID, categoryID, amountMinor int64, description, spentAt string) (*Expense, error) {
 	if err := s.validateCategoryForOwnedBudget(ctx, userID, budgetID, categoryID); err != nil {
 		return nil, err
 	}
 
 	const query = `
-		INSERT INTO expenses (category_id, amount_minor, note, spent_at, created_at, updated_at)
+		INSERT INTO expenses (category_id, amount_minor, description, spent_at, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?)`
 
 	now := time.Now().UTC().Format(time.RFC3339)
-	res, err := s.db.ExecContext(ctx, query, categoryID, amountMinor, note, spentAt, now, now)
+	res, err := s.db.ExecContext(ctx, query, categoryID, amountMinor, description, spentAt, now, now)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (s *Store) CreateExpense(ctx context.Context, userID, budgetID, categoryID,
 
 // UpdateExpense edits an expense the caller owns; the new category must be in the same
 // budget as the expense.
-func (s *Store) UpdateExpense(ctx context.Context, userID, expenseID, categoryID, amountMinor int64, note, spentAt string) (*Expense, error) {
+func (s *Store) UpdateExpense(ctx context.Context, userID, expenseID, categoryID, amountMinor int64, description, spentAt string) (*Expense, error) {
 	budgetID, err := s.getExpenseBudgetIDForUser(ctx, userID, expenseID)
 	if err != nil {
 		return nil, err
@@ -118,11 +118,11 @@ func (s *Store) UpdateExpense(ctx context.Context, userID, expenseID, categoryID
 
 	const query = `
 		UPDATE expenses
-		SET category_id = ?, amount_minor = ?, note = ?, spent_at = ?, updated_at = ?
+		SET category_id = ?, amount_minor = ?, description = ?, spent_at = ?, updated_at = ?
 		WHERE id = ?`
 
 	now := time.Now().UTC().Format(time.RFC3339)
-	if _, err := s.db.ExecContext(ctx, query, categoryID, amountMinor, note, spentAt, now, expenseID); err != nil {
+	if _, err := s.db.ExecContext(ctx, query, categoryID, amountMinor, description, spentAt, now, expenseID); err != nil {
 		return nil, err
 	}
 
@@ -208,13 +208,13 @@ func (s *Store) getExpenseBudgetIDForUser(ctx context.Context, userID, expenseID
 // getExpenseByID loads a full expense row by ID (ownership is checked by the caller).
 func (s *Store) getExpenseByID(ctx context.Context, id int64) (*Expense, error) {
 	const query = `
-		SELECT id, category_id, amount_minor, note, spent_at, created_at, updated_at
+		SELECT id, category_id, amount_minor, description, spent_at, created_at, updated_at
 		FROM expenses
 		WHERE id = ?`
 
 	var e Expense
 	err := s.db.QueryRowContext(ctx, query, id).
-		Scan(&e.ID, &e.CategoryID, &e.AmountMinor, &e.Note, &e.SpentAt, &e.CreatedAt, &e.UpdatedAt)
+		Scan(&e.ID, &e.CategoryID, &e.AmountMinor, &e.Description, &e.SpentAt, &e.CreatedAt, &e.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

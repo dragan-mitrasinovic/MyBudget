@@ -8,23 +8,24 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/dragan-mitrasinovic/MyBudget/server/internal/store"
 )
 
-// maxNoteLen bounds the free-text note on an expense.
-const maxNoteLen = 500
+// maxDescriptionLen keeps the primary expense label concise in list views.
+const maxDescriptionLen = 120
 
 type expenseRequest struct {
 	CategoryID  int64  `json:"categoryId"`
 	AmountMinor int64  `json:"amountMinor"`
-	Note        string `json:"note"`
+	Description string `json:"description"`
 	SpentAt     string `json:"spentAt"`
 }
 
 // normalizeAndValidate trims and validates an expense payload in place.
 func (req *expenseRequest) normalizeAndValidate() error {
-	req.Note = strings.TrimSpace(req.Note)
+	req.Description = strings.TrimSpace(req.Description)
 
 	if req.CategoryID <= 0 {
 		return fmt.Errorf("categoryId is required")
@@ -34,8 +35,8 @@ func (req *expenseRequest) normalizeAndValidate() error {
 		return fmt.Errorf("amount must be greater than zero")
 	}
 
-	if len(req.Note) > maxNoteLen {
-		return fmt.Errorf("note must be at most %d characters", maxNoteLen)
+	if utf8.RuneCountInString(req.Description) > maxDescriptionLen {
+		return fmt.Errorf("description must be at most %d characters", maxDescriptionLen)
 	}
 
 	if !isValidISODate(req.SpentAt) {
@@ -109,7 +110,7 @@ func (srv *Server) handleCreateExpense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	expense, err := srv.store.CreateExpense(
-		r.Context(), user.ID, budgetID, req.CategoryID, req.AmountMinor, req.Note, req.SpentAt,
+		r.Context(), user.ID, budgetID, req.CategoryID, req.AmountMinor, req.Description, req.SpentAt,
 	)
 	if err != nil {
 		writeExpenseError(w, err)
@@ -142,7 +143,7 @@ func (srv *Server) handleUpdateExpense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	expense, err := srv.store.UpdateExpense(
-		r.Context(), user.ID, expenseID, req.CategoryID, req.AmountMinor, req.Note, req.SpentAt,
+		r.Context(), user.ID, expenseID, req.CategoryID, req.AmountMinor, req.Description, req.SpentAt,
 	)
 	if err != nil {
 		writeExpenseError(w, err)

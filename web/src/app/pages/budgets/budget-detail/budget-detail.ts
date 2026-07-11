@@ -146,7 +146,9 @@ export class BudgetDetail implements OnInit {
   async removeExpense(expense: Expense): Promise<void> {
     const data: ConfirmData = {
       title: 'Delete expense?',
-      message: 'This expense will be permanently deleted.',
+      message: expense.description
+        ? `“${expense.description}” will be permanently deleted.`
+        : 'This expense will be permanently deleted.',
       confirmText: 'Delete',
     };
     const confirmed = await firstValueFrom(

@@ -22,6 +22,14 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
+      <mat-label>Description (optional)</mat-label>
+      <input matInput formControlName="description" />
+      @if (form.controls.description.hasError('maxlength')) {
+        <mat-error>Description must be at most 120 characters</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
       <mat-label>Category</mat-label>
       <mat-select formControlName="categoryId">
         @for (c of categories; track c.id) {
@@ -35,11 +43,6 @@
       <input matInput [matDatepicker]="picker" formControlName="date" />
       <mat-datepicker-toggle matIconSuffix [for]="picker" />
       <mat-datepicker #picker />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Note (optional)</mat-label>
-      <input matInput formControlName="note" maxlength="500" />
     </mat-form-field>
   </mat-dialog-content>
 

@@ -22,7 +22,7 @@ Three new tables, owned transitively by a user via the budget:
 - **categories** — `id`, `budget_id` (FK → `budgets`, `ON DELETE CASCADE`), `name`
   (unique per budget), `is_system` (`0`/`1`), `created_at`.
 - **expenses** — `id`, `category_id` (FK → `categories`, `ON DELETE CASCADE`),
-  `amount_minor`, `note`, `spent_at`, `created_at`, `updated_at`.
+  `amount_minor`, `description`, `spent_at`, `created_at`, `updated_at`.
 
 Supporting rules:
 
@@ -39,6 +39,10 @@ Supporting rules:
 - **Expenses carry their own `spent_at` date**, distinct from `created_at` (when the row was
   entered). The UI defaults `spent_at` to today but lets the user change it, so the spend
   date is accurate even when logged later. Time-based filters/queries key off `spent_at`.
+- **Expenses may have an optional `description`** as their primary human-readable label, such
+  as "Burgers". Descriptions are trimmed and limited to 120 Unicode characters. The category
+  remains the expense's classification and is the primary UI fallback when the description is
+  empty.
 - **Expenses do not store `budget_id`**; the owning budget is reached through the category.
   Booleans (`archived`, `is_system`) are `0`/`1` integers, since SQLite has no boolean type.
 

@@ -2,7 +2,7 @@ export interface Expense {
   id: number;
   categoryId: number;
   amountMinor: number;
-  note: string;
+  description: string;
   spentAt: string;
   createdAt: string;
   updatedAt: string;
@@ -13,6 +13,6 @@ export interface Expense {
 export interface ExpenseInput {
   categoryId: number;
   amountMinor: number;
-  note: string;
+  description: string;
   spentAt: string;
 }

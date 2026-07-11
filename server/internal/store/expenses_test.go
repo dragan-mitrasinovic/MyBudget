@@ -69,6 +69,36 @@ func TestExpenseMutationsAreScopedToOwner(t *testing.T) {
 	}
 }
 
+func TestExpenseDescriptionPersistsOnCreateAndUpdate(t *testing.T) {
+	st := openTestStore(t)
+	user := createStoreTestUser(t, st, "expense-owner")
+	budget := createStoreTestBudget(t, st, user.ID, "Household")
+	ctx := context.Background()
+
+	category, err := st.CreateCategory(ctx, user.ID, budget.ID, "Eating out")
+	if err != nil {
+		t.Fatalf("create category: %v", err)
+	}
+
+	expense, err := st.CreateExpense(ctx, user.ID, budget.ID, category.ID, 1599, "Burgers", "2026-07-11")
+	if err != nil {
+		t.Fatalf("create expense: %v", err)
+	}
+
+	if expense.Description != "Burgers" {
+		t.Fatalf("created description = %q, want %q", expense.Description, "Burgers")
+	}
+
+	updated, err := st.UpdateExpense(ctx, user.ID, expense.ID, category.ID, 1899, "Dinner", "2026-07-10")
+	if err != nil {
+		t.Fatalf("update expense: %v", err)
+	}
+
+	if updated.Description != "Dinner" {
+		t.Fatalf("updated description = %q, want %q", updated.Description, "Dinner")
+	}
+}
+
 func TestListExpensesAppliesFiltersAndOrdering(t *testing.T) {
 	st := openTestStore(t)
 	user := createStoreTestUser(t, st, "expense-owner")

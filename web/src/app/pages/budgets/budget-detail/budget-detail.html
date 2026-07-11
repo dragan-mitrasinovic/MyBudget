@@ -83,9 +83,12 @@
         <mat-list>
           @for (e of expenses(); track e.id) {
             <mat-list-item>
-              <span matListItemTitle>{{ categoryNames().get(e.categoryId) }}</span>
+              <span matListItemTitle class="expense-title">
+                {{ e.description || categoryNames().get(e.categoryId) }}
+              </span>
               <span matListItemLine class="expense-sub">
-                {{ formatDate(e.spentAt) }}{{ e.note ? ' · ' + e.note : '' }}
+                {{ e.description ? categoryNames().get(e.categoryId) + ' · ' : ''
+                }}{{ formatDate(e.spentAt) }}
               </span>
               <span matListItemMeta class="expense-meta">
                 <span class="expense-amount">{{ e.amountMinor | money: b.currency }}</span>

@@ -32,6 +32,11 @@
   margin-bottom: var(--space-2);
 }
 
+.section-header > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .section {
   margin-bottom: var(--space-4);
 }
@@ -50,6 +55,7 @@
 .section-total {
   color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-medium);
+  white-space: nowrap;
 }
 
 .empty-hint {
@@ -60,6 +66,12 @@
 .system-hint {
   color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-small);
+}
+
+.expense-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .expense-sub {

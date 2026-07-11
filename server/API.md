@@ -127,7 +127,7 @@ returned.
   "id": 56,
   "categoryId": 34,
   "amountMinor": 1599,
-  "note": "Lunch",
+  "description": "Burgers",
   "spentAt": "2026-07-11",
   "createdAt": "2026-07-11T08:32:00Z",
   "updatedAt": "2026-07-11T08:32:00Z"
@@ -154,12 +154,12 @@ validate against a complete ISO 4217 table.
 
 - `amountMinor` is required and must be greater than zero.
 
-### Names and notes
+### Names and descriptions
 
 Budget and category names are trimmed and must be 1-100 bytes in the current implementation.
-Expense notes are trimmed, optional, and limited to 500 bytes. Category names are unique within
-a budget using SQLite's current case-sensitive uniqueness, so exact duplicates conflict while
-case-only variants are currently distinct.
+Expense descriptions are trimmed, optional, and limited to 120 Unicode characters. Category
+names are unique within a budget using SQLite's current case-sensitive uniqueness, so exact
+duplicates conflict while case-only variants are currently distinct.
 
 ### Dates and timestamps
 
@@ -478,7 +478,7 @@ Request:
 {
   "categoryId": 34,
   "amountMinor": 1599,
-  "note": "Lunch",
+  "description": "Burgers",
   "spentAt": "2026-07-11"
 }
 ```
@@ -487,7 +487,7 @@ Fields:
 
 - `categoryId`: required positive integer; must belong to the path budget.
 - `amountMinor`: required integer greater than zero.
-- `note`: optional string; trimmed; at most 500 bytes; omitted becomes `""`.
+- `description`: optional string; trimmed; at most 120 Unicode characters; omitted becomes `""`.
 - `spentAt`: required valid date in `YYYY-MM-DD` format.
 
 Success: `201 Created` with the created Expense.
@@ -512,12 +512,13 @@ Request:
 {
   "categoryId": 35,
   "amountMinor": 1899,
-  "note": "Dinner",
+  "description": "Dinner",
   "spentAt": "2026-07-11"
 }
 ```
 
-`categoryId`, `amountMinor`, and `spentAt` are required; `note` may be empty. The server refreshes
+`categoryId`, `amountMinor`, and `spentAt` are required; `description` may be empty. The server
+refreshes `updatedAt`.
 `updatedAt`.
 
 Success: `200 OK` with the updated Expense.

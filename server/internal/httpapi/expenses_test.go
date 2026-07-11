@@ -14,20 +14,25 @@ import (
 
 func TestExpenseRequestNormalizeAndValidate(t *testing.T) {
 	tests := []struct {
-		name      string
-		request   expenseRequest
-		wantNote  string
-		wantError bool
+		name            string
+		request         expenseRequest
+		wantDescription string
+		wantError       bool
 	}{
 		{
-			name:     "normalizes valid request",
-			request:  expenseRequest{CategoryID: 1, AmountMinor: 1599, Note: "  Lunch  ", SpentAt: "2026-07-11"},
-			wantNote: "Lunch",
+			name:            "normalizes valid request",
+			request:         expenseRequest{CategoryID: 1, AmountMinor: 1599, Description: "  Burgers  ", SpentAt: "2026-07-11"},
+			wantDescription: "Burgers",
 		},
 		{
-			name:     "accepts leap day",
-			request:  expenseRequest{CategoryID: 1, AmountMinor: 1, SpentAt: "2024-02-29"},
-			wantNote: "",
+			name:            "accepts leap day with blank description",
+			request:         expenseRequest{CategoryID: 1, AmountMinor: 1, SpentAt: "2024-02-29"},
+			wantDescription: "",
+		},
+		{
+			name:            "accepts maximum length multibyte description",
+			request:         expenseRequest{CategoryID: 1, AmountMinor: 1, Description: strings.Repeat("é", maxDescriptionLen), SpentAt: "2026-07-11"},
+			wantDescription: strings.Repeat("é", maxDescriptionLen),
 		},
 		{
 			name:      "rejects missing category",
@@ -40,8 +45,8 @@ func TestExpenseRequestNormalizeAndValidate(t *testing.T) {
 			wantError: true,
 		},
 		{
-			name:      "rejects long note",
-			request:   expenseRequest{CategoryID: 1, AmountMinor: 1, Note: strings.Repeat("a", maxNoteLen+1), SpentAt: "2026-07-11"},
+			name:      "rejects long description",
+			request:   expenseRequest{CategoryID: 1, AmountMinor: 1, Description: strings.Repeat("🍔", maxDescriptionLen+1), SpentAt: "2026-07-11"},
 			wantError: true,
 		},
 		{
@@ -63,8 +68,8 @@ func TestExpenseRequestNormalizeAndValidate(t *testing.T) {
 				t.Fatalf("normalizeAndValidate() error = %v, wantError %v", err, test.wantError)
 			}
 
-			if !test.wantError && test.request.Note != test.wantNote {
-				t.Errorf("Note = %q, want %q", test.request.Note, test.wantNote)
+			if !test.wantError && test.request.Description != test.wantDescription {
+				t.Errorf("Description = %q, want %q", test.request.Description, test.wantDescription)
 			}
 		})
 	}
@@ -97,7 +102,7 @@ func TestExpenseEndpointsCreateListAndRejectWrongBudgetCategory(t *testing.T) {
 	createRequest := httptest.NewRequest(
 		http.MethodPost,
 		collectionPath,
-		bytes.NewBufferString(`{"categoryId":`+strconv.FormatInt(firstCategory.ID, 10)+`,"amountMinor":1599,"note":"  Lunch  ","spentAt":"2026-07-11"}`),
+		bytes.NewBufferString(`{"categoryId":`+strconv.FormatInt(firstCategory.ID, 10)+`,"amountMinor":1599,"description":"  Burgers  ","spentAt":"2026-07-11"}`),
 	)
 	createRequest.Header.Set("Origin", testAppOrigin)
 	createRequest.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionID})
@@ -108,13 +113,23 @@ func TestExpenseEndpointsCreateListAndRejectWrongBudgetCategory(t *testing.T) {
 		t.Fatalf("create status = %d, want %d", createResponse.Code, http.StatusCreated)
 	}
 
+	createBody := createResponse.Body.Bytes()
 	var created store.Expense
-	if err := json.NewDecoder(createResponse.Body).Decode(&created); err != nil {
+	if err := json.Unmarshal(createBody, &created); err != nil {
 		t.Fatalf("decode created expense: %v", err)
 	}
 
-	if created.CategoryID != firstCategory.ID || created.AmountMinor != 1599 || created.Note != "Lunch" {
+	if created.CategoryID != firstCategory.ID || created.AmountMinor != 1599 || created.Description != "Burgers" {
 		t.Errorf("created expense = %#v, want normalized fields", created)
+	}
+
+	var createFields map[string]json.RawMessage
+	if err := json.Unmarshal(createBody, &createFields); err != nil {
+		t.Fatalf("decode created expense fields: %v", err)
+	}
+
+	if _, ok := createFields["description"]; !ok {
+		t.Error("created expense response is missing description")
 	}
 
 	listRequest := httptest.NewRequest(http.MethodGet, collectionPath, nil)
@@ -133,6 +148,29 @@ func TestExpenseEndpointsCreateListAndRejectWrongBudgetCategory(t *testing.T) {
 
 	if len(expenses) != 1 || expenses[0].ID != created.ID {
 		t.Fatalf("listed expenses = %#v, want created expense", expenses)
+	}
+
+	updateRequest := httptest.NewRequest(
+		http.MethodPatch,
+		"/api/expenses/"+strconv.FormatInt(created.ID, 10),
+		bytes.NewBufferString(`{"categoryId":`+strconv.FormatInt(firstCategory.ID, 10)+`,"amountMinor":1899,"description":"  Dinner  ","spentAt":"2026-07-10"}`),
+	)
+	updateRequest.Header.Set("Origin", testAppOrigin)
+	updateRequest.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionID})
+	updateResponse := httptest.NewRecorder()
+	handler.ServeHTTP(updateResponse, updateRequest)
+
+	if updateResponse.Code != http.StatusOK {
+		t.Fatalf("update status = %d, want %d", updateResponse.Code, http.StatusOK)
+	}
+
+	var updated store.Expense
+	if err := json.NewDecoder(updateResponse.Body).Decode(&updated); err != nil {
+		t.Fatalf("decode updated expense: %v", err)
+	}
+
+	if updated.AmountMinor != 1899 || updated.Description != "Dinner" || updated.SpentAt != "2026-07-10" {
+		t.Errorf("updated expense = %#v, want replacement fields", updated)
 	}
 
 	wrongCategoryRequest := httptest.NewRequest(
