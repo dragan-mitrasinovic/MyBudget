@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -26,7 +27,7 @@ func Open(path string) (*Store, error) {
 	}
 
 	s := &Store{db: db}
-	if err := s.migrate(); err != nil {
+	if err := s.applyMigrations(context.Background()); err != nil {
 		_ = db.Close()
 		return nil, err
 	}

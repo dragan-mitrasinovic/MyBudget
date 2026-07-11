@@ -28,9 +28,30 @@ for project-wide context. The complete current HTTP contract is documented in
   construction, resource lifecycle, and HTTP startup only.
 - `internal/httpapi/` owns HTTP routing, cookies, request validation, response mapping, and
   handlers.
-- `internal/store/` owns SQLite setup, schema creation, models, and all SQL queries.
+- `internal/store/` owns SQLite setup, embedded ordered migrations, models, and all SQL queries.
 - Dependencies point inward from `cmd/mybudget` to `httpapi` and `store`; `httpapi` may use
   `store`, but `store` must not import the HTTP package.
+
+## Database migrations
+
+Schema history lives in `internal/store/migrations/` and follows ADR-0013.
+
+- **Read all existing migrations before changing the database schema.** Do not recreate schema
+  definitions in Go or rely on `CREATE TABLE IF NOT EXISTS` outside the baseline migration.
+- **Never edit, rename, reorder, or delete an applied migration.** Add the next contiguous file
+  using `NNNN_lowercase_description.sql` (for example, `0002_add_expense_index.sql`).
+- Migrations are forward-only and run automatically during `store.Open`, one transaction per
+  file. Do not put `BEGIN`, `COMMIT`, `ROLLBACK`, or `PRAGMA user_version` in migration SQL; the
+  runner owns transaction and version management.
+- Keep migration SQL deterministic and safe for SQLite. When SQLite requires a table rebuild,
+  copy data explicitly, preserve foreign keys/indexes, and verify the resulting constraints.
+- Add or update focused migration tests for fresh setup, upgrades from the previous version,
+  data preservation, and failure rollback. Run `go test ./internal/store` for every migration.
+- Back up persistent databases with SQLite's backup mechanism before applying production schema
+  changes. An application binary must not be deployed unless it contains every migration needed
+  by the target database.
+- Update the relevant ADR when migration strategy changes. Update `API.md` only when the schema
+  migration also changes observable HTTP behavior.
 
 ## Go coding style
 
