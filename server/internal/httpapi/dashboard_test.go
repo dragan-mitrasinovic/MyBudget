@@ -43,6 +43,15 @@ func TestDashboardEndpointsLoadAndPersistLayout(t *testing.T) {
 	}
 
 	layout.Widgets[0].Y = 6
+	layout.Widgets = append(layout.Widgets, store.DashboardWidget{
+		ID:            "category-breakdown:11111111-1111-4111-8111-111111111111",
+		Type:          store.DashboardWidgetTypeCategoryBreakdown,
+		Visualization: store.DashboardVisualizationDonut,
+		X:             0,
+		Y:             16,
+		Columns:       18,
+		Rows:          12,
+	})
 	body, err := json.Marshal(layout)
 	if err != nil {
 		t.Fatalf("encode layout: %v", err)
@@ -71,6 +80,14 @@ func TestDashboardEndpointsLoadAndPersistLayout(t *testing.T) {
 	if persisted.Widgets[0].Y != 6 {
 		t.Errorf("persisted widget y = %d, want 6", persisted.Widgets[0].Y)
 	}
+
+	if len(persisted.Widgets) != 3 || persisted.Widgets[2].Type != store.DashboardWidgetTypeCategoryBreakdown {
+		t.Errorf("persisted widgets = %#v, want category breakdown widget", persisted.Widgets)
+	}
+
+	if persisted.Widgets[2].Visualization != store.DashboardVisualizationDonut {
+		t.Errorf("persisted visualization = %q, want %q", persisted.Widgets[2].Visualization, store.DashboardVisualizationDonut)
+	}
 }
 
 func TestDashboardEndpointsRejectInvalidAndUnownedLayouts(t *testing.T) {
@@ -86,7 +103,7 @@ func TestDashboardEndpointsRejectInvalidAndUnownedLayouts(t *testing.T) {
 	invalidRequest := httptest.NewRequest(
 		http.MethodPut,
 		path,
-		bytes.NewBufferString(`{"version":4,"widgets":[]}`),
+		bytes.NewBufferString(`{"version":7,"widgets":[]}`),
 	)
 	invalidRequest.Header.Set("Origin", testAppOrigin)
 	invalidRequest.AddCookie(&http.Cookie{Name: sessionCookieName, Value: ownerSessionID})

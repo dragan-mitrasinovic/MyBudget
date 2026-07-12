@@ -11,8 +11,8 @@ import (
 func TestOpenAppliesMigrations(t *testing.T) {
 	st := openTestStore(t)
 
-	if version := readDatabaseVersion(t, st.db); version != 2 {
-		t.Fatalf("database version = %d, want 2", version)
+	if version := readDatabaseVersion(t, st.db); version != 3 {
+		t.Fatalf("database version = %d, want 3", version)
 	}
 
 	for _, table := range []string{"users", "sessions", "budgets", "categories", "expenses", "dashboard_layouts"} {
@@ -24,38 +24,50 @@ func TestOpenAppliesMigrations(t *testing.T) {
 	if !columnExists(t, st.db, "expenses", "description") {
 		t.Error("expenses.description column does not exist")
 	}
+
+	for _, column := range []string{"color_key", "color_hex"} {
+		if !columnExists(t, st.db, "categories", column) {
+			t.Errorf("categories.%s column does not exist", column)
+		}
+	}
 }
 
 func TestOpenAdoptsExistingUnversionedSchemaWithoutDataLoss(t *testing.T) {
 	path := testDatabasePath(t)
-	st, err := Open(path)
+	dsn := fmt.Sprintf("file:%s?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)", path)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
-		t.Fatalf("open initial store: %v", err)
+		t.Fatalf("open unversioned database: %v", err)
+	}
+
+	migrations, err := loadMigrations(embeddedMigrations)
+	if err != nil {
+		t.Fatalf("load migrations: %v", err)
+	}
+
+	if _, err := db.Exec(migrations[0].sql); err != nil {
+		t.Fatalf("create unversioned schema: %v", err)
 	}
 
 	const insertUser = `
 		INSERT INTO users (google_sub, email, name, picture, created_at)
 		VALUES ('existing-user', 'existing@example.com', 'Existing User', '', '2026-07-11T00:00:00Z')`
-	if _, err := st.db.Exec(insertUser); err != nil {
+	if _, err := db.Exec(insertUser); err != nil {
 		t.Fatalf("insert existing user: %v", err)
 	}
 
-	if _, err := st.db.Exec("PRAGMA user_version = 0"); err != nil {
-		t.Fatalf("reset database version: %v", err)
+	if err := db.Close(); err != nil {
+		t.Fatalf("close unversioned database: %v", err)
 	}
 
-	if err := st.Close(); err != nil {
-		t.Fatalf("close initial store: %v", err)
-	}
-
-	st, err = Open(path)
+	st, err := Open(path)
 	if err != nil {
 		t.Fatalf("reopen unversioned store: %v", err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
 
-	if version := readDatabaseVersion(t, st.db); version != 2 {
-		t.Fatalf("database version = %d, want 2", version)
+	if version := readDatabaseVersion(t, st.db); version != 3 {
+		t.Fatalf("database version = %d, want 3", version)
 	}
 
 	var userCount int
@@ -92,8 +104,8 @@ func TestOpenAlreadyMigratedDatabaseIsNoOp(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = st.Close() })
 
-	if version := readDatabaseVersion(t, st.db); version != 2 {
-		t.Fatalf("database version = %d, want 2", version)
+	if version := readDatabaseVersion(t, st.db); version != 3 {
+		t.Fatalf("database version = %d, want 3", version)
 	}
 
 	var userCount int
@@ -103,6 +115,65 @@ func TestOpenAlreadyMigratedDatabaseIsNoOp(t *testing.T) {
 
 	if userCount != 1 {
 		t.Fatalf("persisted user count = %d, want 1", userCount)
+	}
+}
+
+func TestCategoryColorMigrationBackfillsExistingCategories(t *testing.T) {
+	db := openTestDatabase(t)
+	migrations, err := loadMigrations(embeddedMigrations)
+	if err != nil {
+		t.Fatalf("load migrations: %v", err)
+	}
+
+	for _, migration := range migrations[:2] {
+		if err := applyMigration(t.Context(), db, migration); err != nil {
+			t.Fatalf("apply migration %s: %v", migration.name, err)
+		}
+	}
+
+	const insert = `
+		INSERT INTO users (id, google_sub, email, name, picture, created_at)
+		VALUES (1, 'existing-user', 'existing@example.com', 'Existing User', '', '2026-07-11T00:00:00Z');
+		INSERT INTO budgets (id, user_id, name, currency, created_at, updated_at)
+		VALUES (1, 1, 'Household', 'EUR', '2026-07-11T00:00:00Z', '2026-07-11T00:00:00Z');
+		INSERT INTO categories (id, budget_id, name, is_system, created_at)
+		VALUES
+			(1, 1, 'Uncategorized', 1, '2026-07-11T00:00:00Z'),
+			(2, 1, 'Transport', 0, '2026-07-11T00:00:00Z'),
+			(3, 1, 'Food', 0, '2026-07-11T00:00:00Z');`
+	if _, err := db.Exec(insert); err != nil {
+		t.Fatalf("insert existing categories: %v", err)
+	}
+
+	if err := applyMigration(t.Context(), db, migrations[2]); err != nil {
+		t.Fatalf("apply category color migration: %v", err)
+	}
+
+	rows, err := db.Query(`SELECT name, color_key, color_hex FROM categories ORDER BY id`)
+	if err != nil {
+		t.Fatalf("query migrated categories: %v", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	wantColors := map[string]string{
+		"Uncategorized": "neutral",
+		"Food":          "chart-1",
+		"Transport":     "chart-2",
+	}
+	for rows.Next() {
+		var name, colorKey string
+		var colorHex *string
+		if err := rows.Scan(&name, &colorKey, &colorHex); err != nil {
+			t.Fatalf("scan migrated category: %v", err)
+		}
+
+		if colorKey != wantColors[name] || colorHex != nil {
+			t.Errorf("category %q color = %q, %v; want %q, nil", name, colorKey, colorHex, wantColors[name])
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate migrated categories: %v", err)
 	}
 }
 

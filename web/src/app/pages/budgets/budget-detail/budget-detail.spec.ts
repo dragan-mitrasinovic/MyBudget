@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { GridType } from 'angular-gridster2';
 import { of } from 'rxjs';
 
 import { Budget } from '../../../core/budgets/budget.models';
@@ -31,6 +32,8 @@ describe('BudgetDetail dashboard', () => {
       budgetId: budget.id,
       name: 'Eating out',
       isSystem: false,
+      colorKey: 'chart-1',
+      colorHex: null,
       createdAt: '2026-07-01T00:00:00Z',
     },
     {
@@ -38,6 +41,8 @@ describe('BudgetDetail dashboard', () => {
       budgetId: budget.id,
       name: 'Groceries',
       isSystem: false,
+      colorKey: 'chart-2',
+      colorHex: null,
       createdAt: '2026-07-01T00:00:00Z',
     },
   ];
@@ -108,7 +113,7 @@ describe('BudgetDetail dashboard', () => {
     const { component, saveDashboard } = await setup();
     vi.useFakeTimers();
     const widget = component.dashboardWidgets()[0];
-    widget.x = 24;
+    widget.x = 48;
     widget.y = 12;
 
     component.gridOptions.draggable?.stop?.(widget, null as never, new MouseEvent('mouseup'));
@@ -118,15 +123,18 @@ describe('BudgetDetail dashboard', () => {
 
     expect(saveDashboard).toHaveBeenCalledWith(12, {
       version: dashboardLayoutVersion,
-      widgets: [{ ...layout.widgets[0], x: 24, y: 12 }, layout.widgets[1]],
+      widgets: [{ ...layout.widgets[0], x: 48, y: 12 }, layout.widgets[1]],
     });
     expect(component.layoutSaveState()).toBe('saved');
   });
 
-  it('uses granular grid steps without changing default widget size', async () => {
+  it('uses a bidirectionally extensible fixed-cell grid without changing widget size', async () => {
     const { component } = await setup();
 
-    expect(component.gridOptions.maxCols).toBe(36);
+    expect(component.gridOptions.gridType).toBe(GridType.Fixed);
+    expect(component.gridOptions.minCols).toBe(36);
+    expect(component.gridOptions.maxCols).toBe(20000);
+    expect(component.gridOptions.fixedColWidth).toBe(32);
     expect(component.gridOptions.fixedRowHeight).toBe(32);
     expect(component.gridOptions.minItemCols).toBe(9);
     expect(component.gridOptions.minItemRows).toBe(6);
@@ -150,6 +158,67 @@ describe('BudgetDetail dashboard', () => {
     expect(component.gridOptions.disablePushOnResize).toBe(true);
   });
 
+  it('adds and removes duplicate category breakdown charts through layout persistence', async () => {
+    const { component, saveDashboard } = await setup();
+    vi.useFakeTimers();
+
+    component.addCategoryBreakdownChart('pie');
+    component.addCategoryBreakdownChart('donut');
+    component.addCategoryBreakdownChart('bar');
+    component.addCategoryBreakdownChart('treemap');
+    const charts = component
+      .dashboardWidgets()
+      .filter((widget) => widget.type === 'category-breakdown');
+
+    expect(charts).toHaveLength(4);
+    expect(charts[0]).toMatchObject({ visualization: 'pie', x: 0, y: 10, cols: 18, rows: 12 });
+    expect(charts[1]).toMatchObject({
+      visualization: 'donut',
+      x: 18,
+      y: 10,
+      cols: 18,
+      rows: 12,
+    });
+    expect(charts[2]).toMatchObject({ visualization: 'bar', x: 0, y: 22, cols: 18, rows: 12 });
+    expect(charts[3]).toMatchObject({
+      visualization: 'treemap',
+      x: 18,
+      y: 22,
+      cols: 18,
+      rows: 12,
+    });
+
+    await vi.advanceTimersByTimeAsync(300);
+    expect(saveDashboard).toHaveBeenLastCalledWith(
+      budget.id,
+      expect.objectContaining({ widgets: expect.arrayContaining(charts) }),
+    );
+
+    component.removeDashboardWidget(charts[0].id);
+    await vi.advanceTimersByTimeAsync(300);
+    expect(component.dashboardWidgets()).not.toContainEqual(charts[0]);
+  });
+
+  it('changes chart visualization without changing its identity or geometry', async () => {
+    const { component, saveDashboard } = await setup();
+    vi.useFakeTimers();
+    component.addCategoryBreakdownChart('pie');
+    const chart = component
+      .dashboardWidgets()
+      .find((widget) => widget.type === 'category-breakdown');
+    expect(chart).toBeDefined();
+
+    component.changeCategoryBreakdownVisualization(chart!.id, 'treemap');
+    await vi.advanceTimersByTimeAsync(300);
+
+    const changed = component.dashboardWidgets().find((widget) => widget.id === chart!.id);
+    expect(changed).toEqual({ ...chart, visualization: 'treemap' });
+    expect(saveDashboard).toHaveBeenLastCalledWith(
+      budget.id,
+      expect.objectContaining({ widgets: expect.arrayContaining([changed]) }),
+    );
+  });
+
   async function setup(): Promise<{
     component: BudgetDetail;
     fixture: ComponentFixture<BudgetDetail>;
@@ -166,6 +235,7 @@ describe('BudgetDetail dashboard', () => {
     const getDashboard = vi.fn<(budgetId: number) => Promise<DashboardLayout>>();
     const saveDashboard =
       vi.fn<(budgetId: number, value: DashboardLayout) => Promise<DashboardLayout>>();
+    const updateColor = vi.fn();
     let lastDialogConfig: { data: { message: string } } | undefined;
     const dialog = {
       open: (component: unknown, config: unknown) => {
@@ -186,7 +256,7 @@ describe('BudgetDetail dashboard', () => {
         { provide: BudgetService, useValue: { get } },
         {
           provide: CategoryService,
-          useValue: { categories: categorySignal, load: loadCategories },
+          useValue: { categories: categorySignal, load: loadCategories, updateColor },
         },
         {
           provide: ExpenseService,

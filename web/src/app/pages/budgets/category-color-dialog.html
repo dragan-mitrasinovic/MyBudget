@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>{{ category.name }} color</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-dialog-content class="dialog-content">
+    <mat-button-toggle-group [value]="mode()" aria-label="Color source" (change)="setMode($event)">
+      <mat-button-toggle value="palette">Palette</mat-button-toggle>
+      <mat-button-toggle value="custom">Custom</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    @if (mode() === 'palette') {
+      <div class="palette" role="group" aria-label="Category color palette">
+        @for (colorKey of paletteKeys; track colorKey) {
+          <button
+            mat-icon-button
+            type="button"
+            class="palette-swatch"
+            [class.selected]="selectedColorKey() === colorKey"
+            [style.--swatch-color]="colorVariable(colorKey)"
+            [attr.aria-label]="'Use ' + colorKey"
+            [attr.aria-pressed]="selectedColorKey() === colorKey"
+            [matTooltip]="colorKey"
+            (click)="selectPalette(colorKey)"
+          ></button>
+        }
+      </div>
+    } @else {
+      <div class="custom-color">
+        <input
+          type="color"
+          class="native-color"
+          [value]="form.controls.colorHex.valid ? form.controls.colorHex.value : '#0072B2'"
+          aria-label="Choose custom category color"
+          (input)="setNativeColor($event)"
+        />
+
+        <mat-form-field appearance="outline">
+          <mat-label>Hex color</mat-label>
+          <input matInput [formControl]="form.controls.colorHex" placeholder="#0072B2" />
+          @if (form.controls.colorHex.invalid) {
+            <mat-error>Enter a six-digit hex color</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button type="submit">Save</button>
+  </mat-dialog-actions>
+</form>

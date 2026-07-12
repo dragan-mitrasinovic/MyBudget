@@ -1,0 +1,137 @@
+<mat-card appearance="outlined" class="breakdown-widget">
+  <header class="widget-header">
+    <button
+      mat-icon-button
+      type="button"
+      class="dashboard-drag-handle"
+      aria-label="Move spending by category chart"
+      matTooltip="Move chart"
+    >
+      <mat-icon>drag_indicator</mat-icon>
+    </button>
+
+    <div class="widget-heading">
+      <h2 class="widget-title">Spending by category</h2>
+      <span class="widget-total">{{ totalMinor() | money: currency() }}</span>
+    </div>
+
+    <button
+      mat-icon-button
+      type="button"
+      aria-label="Chart actions"
+      matTooltip="Chart actions"
+      [matMenuTriggerFor]="chartMenu"
+    >
+      <mat-icon>more_vert</mat-icon>
+    </button>
+  </header>
+
+  <mat-card-content class="widget-content">
+    @if (legendItems().length === 0) {
+      <p class="empty-hint">No expenses to chart.</p>
+    } @else {
+      <div class="chart-layout">
+        <div class="chart-container">
+          @switch (visualization()) {
+            @case ('pie') {
+              <canvas
+                baseChart
+                type="pie"
+                role="img"
+                [data]="pieData()"
+                [options]="pieOptions"
+                [attr.aria-label]="chartAriaLabel()"
+              ></canvas>
+            }
+            @case ('donut') {
+              <canvas
+                baseChart
+                type="doughnut"
+                role="img"
+                [data]="donutData()"
+                [options]="donutOptions"
+                [attr.aria-label]="chartAriaLabel()"
+              ></canvas>
+            }
+            @case ('bar') {
+              <div class="bar-chart" [style.height.px]="barChartHeight()">
+                <canvas
+                  baseChart
+                  type="bar"
+                  role="img"
+                  [data]="barData()"
+                  [options]="barOptions()"
+                  [attr.aria-label]="chartAriaLabel()"
+                ></canvas>
+              </div>
+            }
+            @case ('treemap') {
+              <canvas
+                baseChart
+                type="treemap"
+                role="img"
+                [data]="treemapData()"
+                [options]="treemapOptions"
+                [attr.aria-label]="chartAriaLabel()"
+              ></canvas>
+            }
+          }
+        </div>
+
+        <ul class="chart-legend" aria-label="Category spending">
+          @for (item of legendItems(); track item.category.id) {
+            <li class="legend-item">
+              <button
+                mat-icon-button
+                type="button"
+                class="legend-swatch"
+                [style.--category-color]="item.color"
+                [attr.aria-label]="'Change ' + item.category.name + ' color'"
+                [matTooltip]="'Change ' + item.category.name + ' color'"
+                (click)="colorEditRequested.emit(item.category)"
+              ></button>
+
+              <span class="legend-copy">
+                <span class="legend-name">{{ item.category.name }}</span>
+                <span class="legend-value">
+                  {{ item.amountMinor | money: currency() }} ·
+                  {{ formatPercentage(item.percentage) }}
+                </span>
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-menu #chartMenu="matMenu">
+  <button mat-menu-item type="button" [matMenuTriggerFor]="chartTypeMenu">
+    <mat-icon>swap_horiz</mat-icon>
+    <span>Chart type</span>
+  </button>
+  <button mat-menu-item type="button" (click)="removeRequested.emit()">
+    <mat-icon>delete</mat-icon>
+    <span>Remove chart</span>
+  </button>
+</mat-menu>
+
+<mat-menu #chartTypeMenu="matMenu">
+  <button mat-menu-item type="button" (click)="selectVisualization('pie')">
+    <mat-icon>{{ visualization() === 'pie' ? 'check' : 'pie_chart' }}</mat-icon>
+    <span>Pie chart</span>
+  </button>
+  <button mat-menu-item type="button" (click)="selectVisualization('donut')">
+    <mat-icon>{{ visualization() === 'donut' ? 'check' : 'donut_large' }}</mat-icon>
+    <span>Donut chart</span>
+  </button>
+  <button mat-menu-item type="button" (click)="selectVisualization('bar')">
+    <mat-icon>{{ visualization() === 'bar' ? 'check' : 'bar_chart' }}</mat-icon>
+    <span>Horizontal bars</span>
+  </button>
+  <button mat-menu-item type="button" (click)="selectVisualization('treemap')">
+    <mat-icon>{{ visualization() === 'treemap' ? 'check' : 'view_quilt' }}</mat-icon>
+    <span>Treemap</span>
+  </button>
+</mat-menu>

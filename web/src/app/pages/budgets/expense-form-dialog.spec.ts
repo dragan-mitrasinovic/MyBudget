@@ -14,6 +14,8 @@ describe('ExpenseFormDialog', () => {
     budgetId: 12,
     name: 'Eating out',
     isSystem: false,
+    colorKey: 'chart-1',
+    colorHex: null,
     createdAt: '2026-07-01T00:00:00Z',
   };
 

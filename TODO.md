@@ -22,9 +22,14 @@ _Unsorted, capture-anything. Groom later._
   - [x] Phase 3 — Expenses CRUD (`spent_at` date defaulting to today, quick "save & add another") (2026-07-09) - [x] Added concise optional expense descriptions as the primary UI label (2026-07-11)
   - [x] Phase 4 — Persisted customizable desktop dashboard with movable, resizable
         category-expense widgets (2026-07-12)
-  - [ ] Later session — charts + category colours (option C): category breakdown & spend
-        over time, `GET /api/budgets/{id}/summary`, chart-library ADR, token palette +
-        custom-hex override
+  - [x] Phase 5 — Optional all-time category-breakdown pie charts with shared category colours,
+        curated palette + custom-hex override, and persisted dashboard placement (2026-07-12)
+  - [x] Phase 6 — Bidirectionally extensible dashboard canvas and livelier chart palette
+        (2026-07-12)
+  - [x] Phase 7 — Configurable Pie, Donut, horizontal Bar, and Treemap presentations for the
+        all-time category breakdown (2026-07-12)
+  - [ ] Later session — spend-over-time charts; add server-side summary aggregation when expense
+        pagination or broader analytics makes client-side aggregation incomplete
 
 ## Done
 

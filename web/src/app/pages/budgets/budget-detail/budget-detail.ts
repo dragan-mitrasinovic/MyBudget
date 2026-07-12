@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import {
@@ -20,33 +21,43 @@ import { Budget } from '../../../core/budgets/budget.models';
 import { BudgetService } from '../../../core/budgets/budget.service';
 import { Category } from '../../../core/budgets/category.models';
 import { CategoryService } from '../../../core/budgets/category.service';
+import { aggregateCategorySpending } from '../../../core/budgets/category-spending';
 import {
+  CategoryBreakdownVisualization,
   DashboardLayout,
   DashboardWidget,
+  createCategoryBreakdownWidget,
   dashboardLayoutVersion,
+  isCategoryBreakdownWidget,
+  isCategoryExpensesWidget,
 } from '../../../core/budgets/dashboard.models';
 import { DashboardService } from '../../../core/budgets/dashboard.service';
 import { Expense } from '../../../core/budgets/expense.models';
 import { ExpenseService } from '../../../core/budgets/expense.service';
 import { ConfirmData, ConfirmDialog } from '../../../shared/confirm-dialog/confirm-dialog';
+import { CategoryColorDialog } from '../category-color-dialog';
 import { CategoryFormDialog } from '../category-form-dialog';
 import { ExpenseDialogData, ExpenseFormDialog } from '../expense-form-dialog';
+import { CategoryBreakdownWidget } from './category-breakdown-widget';
 import { CategoryExpenseWidget } from './category-expense-widget';
 
 type LayoutSaveState = 'saved' | 'saving' | 'error';
 
 const dashboardGridColumnScale = 3;
 const dashboardGridRowScale = 2;
+const dashboardMaximumGridColumns = 20000;
 
 @Component({
   selector: 'app-budget-detail',
   imports: [
+    CategoryBreakdownWidget,
     CategoryExpenseWidget,
     Gridster,
     GridsterItem,
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
+    MatMenuModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
   ],
@@ -83,16 +94,22 @@ export class BudgetDetail implements OnInit, OnDestroy {
 
     return grouped;
   });
+  readonly categorySpending = computed(() =>
+    aggregateCategorySpending(this.categories(), this.expenses()),
+  );
   readonly loading = signal(true);
   readonly notFound = signal(false);
   readonly layoutSaveState = signal<LayoutSaveState>('saved');
+  readonly isCategoryBreakdownWidget = isCategoryBreakdownWidget;
+  readonly isCategoryExpensesWidget = isCategoryExpensesWidget;
   readonly gridOptions: GridsterConfig = {
-    gridType: GridType.VerticalFixed,
+    gridType: GridType.Fixed,
     compactType: CompactType.None,
     minCols: 12 * dashboardGridColumnScale,
-    maxCols: 12 * dashboardGridColumnScale,
+    maxCols: dashboardMaximumGridColumns,
     minRows: 1,
     maxRows: 10000 * dashboardGridRowScale,
+    fixedColWidth: 32,
     fixedRowHeight: 32,
     margin: 0,
     outerMargin: false,
@@ -238,6 +255,57 @@ export class BudgetDetail implements OnInit, OnDestroy {
     }
   }
 
+  addCategoryBreakdownChart(visualization: CategoryBreakdownVisualization): void {
+    const widget = createCategoryBreakdownWidget(
+      this.dashboardWidgets(),
+      globalThis.crypto.randomUUID(),
+      visualization,
+    );
+    if (widget === null) {
+      this.snackBar.open('There is no room for another chart.', 'Dismiss', { duration: 4000 });
+      return;
+    }
+
+    this.dashboardWidgets.update((widgets) => [...widgets, widget]);
+    this.scheduleDashboardSave();
+  }
+
+  changeCategoryBreakdownVisualization(
+    widgetID: string,
+    visualization: CategoryBreakdownVisualization,
+  ): void {
+    this.dashboardWidgets.update((widgets) =>
+      widgets.map((widget) =>
+        isCategoryBreakdownWidget(widget) && widget.id === widgetID
+          ? { ...widget, visualization }
+          : widget,
+      ),
+    );
+    this.scheduleDashboardSave();
+  }
+
+  removeDashboardWidget(widgetID: string): void {
+    this.dashboardWidgets.update((widgets) => widgets.filter((widget) => widget.id !== widgetID));
+    this.scheduleDashboardSave();
+  }
+
+  async editCategoryColor(category: Category): Promise<void> {
+    const input = await firstValueFrom(
+      this.dialog.open(CategoryColorDialog, { data: category }).afterClosed(),
+    );
+    if (!input) {
+      return;
+    }
+
+    try {
+      await this.categoryService.updateColor(Number(this.id()), category.id, input);
+    } catch {
+      this.snackBar.open('Could not save the category color. Please try again.', 'Dismiss', {
+        duration: 4000,
+      });
+    }
+  }
+
   ngOnDestroy(): void {
     if (this.dashboardSaveTimeout !== undefined) {
       clearTimeout(this.dashboardSaveTimeout);
@@ -314,15 +382,19 @@ export class BudgetDetail implements OnInit, OnDestroy {
   private dashboardLayoutSnapshot(): DashboardLayout {
     return {
       version: dashboardLayoutVersion,
-      widgets: this.dashboardWidgets().map((widget) => ({
-        id: widget.id,
-        type: widget.type,
-        categoryId: widget.categoryId,
-        x: widget.x,
-        y: widget.y,
-        cols: widget.cols,
-        rows: widget.rows,
-      })),
+      widgets: this.dashboardWidgets().map((widget) => {
+        const geometry = {
+          id: widget.id,
+          x: widget.x,
+          y: widget.y,
+          cols: widget.cols,
+          rows: widget.rows,
+        };
+
+        return isCategoryExpensesWidget(widget)
+          ? { ...geometry, type: widget.type, categoryId: widget.categoryId }
+          : { ...geometry, type: widget.type, visualization: widget.visualization };
+      }),
     };
   }
 }

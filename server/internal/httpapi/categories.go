@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/dragan-mitrasinovic/MyBudget/server/internal/store"
@@ -14,6 +15,13 @@ type categoryRequest struct {
 	Name string `json:"name"`
 }
 
+type categoryColorRequest struct {
+	ColorKey string  `json:"colorKey"`
+	ColorHex *string `json:"colorHex"`
+}
+
+var categoryColorHexPattern = regexp.MustCompile(`^#[0-9A-F]{6}$`)
+
 // normalizeAndValidate trims and validates a category payload in place.
 func (req *categoryRequest) normalizeAndValidate() error {
 	req.Name = strings.TrimSpace(req.Name)
@@ -22,6 +30,25 @@ func (req *categoryRequest) normalizeAndValidate() error {
 		return fmt.Errorf("name must be 1-%d characters", maxNameLen)
 	}
 
+	return nil
+}
+
+func (req *categoryColorRequest) normalizeAndValidate() error {
+	req.ColorKey = strings.TrimSpace(req.ColorKey)
+	if !store.IsValidCategoryColorKey(req.ColorKey) {
+		return errors.New("invalid colorKey")
+	}
+
+	if req.ColorHex == nil {
+		return nil
+	}
+
+	colorHex := strings.ToUpper(strings.TrimSpace(*req.ColorHex))
+	if !categoryColorHexPattern.MatchString(colorHex) {
+		return errors.New("colorHex must be null or a six-digit hex color")
+	}
+
+	req.ColorHex = &colorHex
 	return nil
 }
 
@@ -106,6 +133,37 @@ func (srv *Server) handleUpdateCategory(w http.ResponseWriter, r *http.Request) 
 	}
 
 	category, err := srv.store.UpdateCategory(r.Context(), user.ID, categoryID, req.Name)
+	if err != nil {
+		writeCategoryError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, category)
+}
+
+func (srv *Server) handleUpdateCategoryColor(w http.ResponseWriter, r *http.Request) {
+	user := srv.requireAuthenticatedUser(w, r)
+	if user == nil {
+		return
+	}
+
+	categoryID, ok := parsePathID(w, r, "id")
+	if !ok {
+		return
+	}
+
+	var req categoryColorRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid body", http.StatusBadRequest)
+		return
+	}
+
+	if err := req.normalizeAndValidate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	category, err := srv.store.UpdateCategoryColor(r.Context(), user.ID, categoryID, req.ColorKey, req.ColorHex)
 	if err != nil {
 		writeCategoryError(w, err)
 		return

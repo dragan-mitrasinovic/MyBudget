@@ -31,6 +31,7 @@ func New(st *store.Store, cfg Config) http.Handler {
 	mux.HandleFunc("GET /api/budgets/{id}/categories", srv.handleListCategories)
 	mux.Handle("POST /api/budgets/{id}/categories", requireAppOrigin(srv.handleCreateCategory))
 	mux.Handle("PATCH /api/categories/{id}", requireAppOrigin(srv.handleUpdateCategory))
+	mux.Handle("PUT /api/categories/{id}/color", requireAppOrigin(srv.handleUpdateCategoryColor))
 	mux.Handle("DELETE /api/categories/{id}", requireAppOrigin(srv.handleDeleteCategory))
 
 	mux.HandleFunc("GET /api/budgets/{id}/expenses", srv.handleListExpenses)

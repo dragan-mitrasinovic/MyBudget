@@ -36,6 +36,7 @@ behavior changes.
 | `GET`         | `/api/budgets/{id}/categories` | Required                 | List categories in one owned budget                          |
 | `POST`        | `/api/budgets/{id}/categories` | Required                 | Add a category to one owned budget                           |
 | `PATCH`       | `/api/categories/{id}`         | Required                 | Rename one owned category                                    |
+| `PUT`         | `/api/categories/{id}/color`   | Required                 | Replace one owned category's chart color                     |
 | `DELETE`      | `/api/categories/{id}`         | Required                 | Delete a category after moving its expenses to Uncategorized |
 | `GET`         | `/api/budgets/{id}/expenses`   | Required                 | List and optionally filter expenses in one owned budget      |
 | `POST`        | `/api/budgets/{id}/expenses`   | Required                 | Add an expense to one owned budget                           |
@@ -116,11 +117,15 @@ returned.
   "budgetId": 12,
   "name": "Food",
   "isSystem": false,
+  "colorKey": "chart-1",
+  "colorHex": null,
   "createdAt": "2026-07-11T08:31:00Z"
 }
 ```
 
-`isSystem=true` identifies the permanent Uncategorized category.
+`isSystem=true` identifies the permanent Uncategorized category. `colorKey` selects one of the
+persisted chart palette tokens (`chart-1` through `chart-12`, or `neutral`); a non-null
+`colorHex` overrides that token with a normalized six-digit RGB hex color.
 
 ### Expense
 
@@ -142,7 +147,7 @@ Expenses do not store or return `budgetId`; their budget is reached through thei
 
 ```json
 {
-  "version": 3,
+  "version": 6,
   "widgets": [
     {
       "id": "category-expenses:34",
@@ -152,15 +157,28 @@ Expenses do not store or return `budgetId`; their budget is reached through thei
       "y": 0,
       "cols": 12,
       "rows": 10
+    },
+    {
+      "id": "category-breakdown:11111111-1111-4111-8111-111111111111",
+      "type": "category-breakdown",
+      "visualization": "pie",
+      "x": 12,
+      "y": 10,
+      "cols": 18,
+      "rows": 12
     }
   ]
 }
 ```
 
-Version 3 uses a 36-column grid and 32-pixel rows. `x` and `y` are zero-based coordinates;
-`cols` and `rows` are the widget dimensions. A category expense widget's ID is always
-`category-expenses:{categoryId}`. The server accepts version-1 layouts (12 columns and 64-pixel
-rows) and version-2 layouts (72 columns and 16-pixel rows), returning both upgraded to version 3.
+Version 6 uses fixed 32-pixel rows and columns on a canvas that begins with a 36-column viewport
+and can extend to 20000 columns and 20000 rows. `x` and `y` are zero-based coordinates; `cols` and
+`rows` are the widget dimensions. A category expense widget's ID is always
+`category-expenses:{categoryId}`. A category breakdown widget has no `categoryId` and uses
+`category-breakdown:{uuid}`. Its `visualization` is `pie`, `donut`, `bar`, or `treemap`. The server
+accepts versions 1 through 5 and returns them upgraded to version 6. Version 1 used 12 columns and
+64-pixel rows; version 2 used 72 columns and 16-pixel rows; versions 3 and 4 used 32-pixel geometry
+but limited the canvas to 36 columns; version 5 introduced the current bidirectional canvas.
 
 ## Shared data rules
 
@@ -187,6 +205,14 @@ Expense descriptions are trimmed, optional, and limited to 120 Unicode character
 names are unique within a budget using SQLite's current case-sensitive uniqueness, so exact
 duplicates conflict while case-only variants are currently distinct.
 
+### Category colors
+
+Category colors are shared by every chart that displays that category. `colorKey` must be one of
+`chart-1` through `chart-12` or `neutral`. `colorHex` is either JSON `null` or a six-digit RGB hex
+color beginning with `#`; accepted hex is normalized to uppercase. A custom hex overrides the
+palette token without discarding the selected key, so resetting to the palette needs no inferred
+fallback.
+
 ### Dates and timestamps
 
 - `spentAt` is a required calendar date in `YYYY-MM-DD` format.
@@ -210,6 +236,7 @@ Specific behavior:
 
 - Its category response has `isSystem: true`.
 - It cannot be renamed or deleted; either attempt returns `403 Forbidden`.
+- It can be recolored like any other category and initially uses `colorKey: "neutral"`.
 - New expenses may be assigned to it like any other category.
 - Deleting a custom category moves all of that category's expenses to the same budget's
   Uncategorized category before deleting the category. The reassignment and deletion occur in
@@ -385,7 +412,8 @@ Errors:
 ## Dashboard endpoints
 
 Dashboard layouts belong to one budget and therefore transitively to its owner. Every current
-category has exactly one `category-expenses` widget in the response.
+category has exactly one `category-expenses` widget in the response. Users may also add, move,
+resize, duplicate, and remove optional `category-breakdown` widgets.
 
 The server reconciles layouts with category changes on both reads and writes. Widgets for
 categories that no longer belong to the budget are discarded, while missing current categories
@@ -393,14 +421,20 @@ receive the first available default 12-by-10 position. This makes category creat
 safe even when a client is holding an older layout. Reconciliation returned by `GET` is not
 itself a database write.
 
-Version 3 validation rules:
+Version 6 validation rules:
 
-- `version` must be `3`. Versions `1` and `2` are accepted in their respective legacy grid units
-  and upgraded in the response.
-- Each retained widget must use `type: "category-expenses"`, have the exact derived `id`, and be
-  the only widget for its `categoryId`.
+- `version` must be `6`. Versions `1` through `5` are accepted and upgraded in the response;
+  version-3 through version-5 geometry is unchanged.
+- A `category-expenses` widget must have a positive `categoryId`, use the exact derived ID, and be
+  the only widget for that category. It must omit `visualization`.
+- A `category-breakdown` widget must omit `categoryId` and use a lowercase
+  `category-breakdown:{uuid}` ID. It must set `visualization` to `pie`, `donut`, `bar`, or
+  `treemap`. Multiple widgets of this type are allowed when their IDs differ.
+- Version-4 and version-5 breakdown widgets that omit `visualization` are upgraded to `pie`; a
+  supported value already present in a legacy document is preserved.
+- Unknown widget types and duplicate widget IDs are rejected.
 - `x` and `y` must be non-negative. `cols` must be 9-36, `rows` must be 6-24,
-  `x + cols` must not exceed 36, and `y + rows` must not exceed 20000.
+  `x + cols` and `y + rows` must not exceed 20000.
 - Retained widgets cannot overlap.
 
 ### `GET /api/budgets/{id}/dashboard`
@@ -430,7 +464,7 @@ Success: `200 OK` with the saved, reconciled Dashboard layout.
 Errors:
 
 - `400 Bad Request`: invalid budget ID, malformed JSON, unsupported layout version, invalid
-  widget identity or geometry, duplicate category widget, or overlapping widgets.
+  widget type, identity, or geometry, duplicate widget/category identity, or overlapping widgets.
 - `401 Unauthorized`: invalid session.
 - `404 Not Found`: missing budget or budget owned by another user.
 - `500 Internal Server Error`: persistence failed.
@@ -468,7 +502,9 @@ Request:
 
 `name` is required, trimmed, and limited to 1-100 bytes.
 
-Success: `201 Created` with the created Category (`isSystem: false`).
+Success: `201 Created` with the created Category (`isSystem: false`). New custom categories receive
+the first palette key not already used by a custom category in that budget, cycling through the
+12-key palette when all keys are in use.
 
 Errors:
 
@@ -499,6 +535,39 @@ Errors:
 - `403 Forbidden`: attempted to rename Uncategorized.
 - `404 Not Found`: missing category or category owned by another user.
 - `409 Conflict`: an exact category name already exists in the budget.
+- `500 Internal Server Error`: update failed.
+
+### `PUT /api/categories/{id}/color`
+
+Replaces one category's shared chart color. This operation is also allowed for Uncategorized;
+its system protection applies only to renaming and deletion.
+
+Request using the curated palette:
+
+```json
+{
+  "colorKey": "chart-5",
+  "colorHex": null
+}
+```
+
+Request using a custom override:
+
+```json
+{
+  "colorKey": "chart-5",
+  "colorHex": "#A1B2C3"
+}
+```
+
+Success: `200 OK` with the updated Category.
+
+Errors:
+
+- `400 Bad Request`: invalid category ID, malformed JSON, unknown `colorKey`, or invalid
+  `colorHex`.
+- `401 Unauthorized`: invalid session.
+- `404 Not Found`: missing category or category owned by another user.
 - `500 Internal Server Error`: update failed.
 
 ### `DELETE /api/categories/{id}`

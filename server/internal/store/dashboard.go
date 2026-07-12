@@ -5,22 +5,37 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 )
 
 const (
-	DashboardLayoutVersion              = 3
-	DashboardWidgetTypeCategoryExpenses = "category-expenses"
-	dashboardOriginalLayoutVersion      = 1
-	dashboardFineLayoutVersion          = 2
-	dashboardGridColumns                = 36
-	dashboardDefaultWidgetColumns       = 12
-	dashboardDefaultWidgetRows          = 10
-	dashboardMinimumWidgetColumns       = 9
-	dashboardMinimumWidgetRows          = 6
-	dashboardMaximumWidgetRows          = 24
-	dashboardMaximumGridRows            = 20000
+	DashboardLayoutVersion               = 6
+	DashboardWidgetTypeCategoryExpenses  = "category-expenses"
+	DashboardWidgetTypeCategoryBreakdown = "category-breakdown"
+	DashboardVisualizationPie            = "pie"
+	DashboardVisualizationDonut          = "donut"
+	DashboardVisualizationBar            = "bar"
+	DashboardVisualizationTreemap        = "treemap"
+	dashboardOriginalLayoutVersion       = 1
+	dashboardFineLayoutVersion           = 2
+	dashboardCategoryOnlyLayoutVersion   = 3
+	dashboardChartLayoutVersion          = 4
+	dashboardBidirectionalLayoutVersion  = 5
+	dashboardInitialGridColumns          = 36
+	dashboardMaximumGridColumns          = 20000
+	dashboardDefaultWidgetColumns        = 12
+	dashboardDefaultWidgetRows           = 10
+	dashboardMinimumWidgetColumns        = 9
+	dashboardMaximumWidgetColumns        = 36
+	dashboardMinimumWidgetRows           = 6
+	dashboardMaximumWidgetRows           = 24
+	dashboardMaximumGridRows             = 20000
+)
+
+var dashboardCategoryBreakdownWidgetIDPattern = regexp.MustCompile(
+	`^category-breakdown:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`,
 )
 
 // DashboardLayout is the versioned arrangement of widgets for one budget.
@@ -29,15 +44,16 @@ type DashboardLayout struct {
 	Widgets []DashboardWidget `json:"widgets"`
 }
 
-// DashboardWidget describes the position and size of one category expense widget.
+// DashboardWidget describes the identity, type, position, and size of one dashboard widget.
 type DashboardWidget struct {
-	ID         string `json:"id"`
-	Type       string `json:"type"`
-	CategoryID int64  `json:"categoryId"`
-	X          int    `json:"x"`
-	Y          int    `json:"y"`
-	Columns    int    `json:"cols"`
-	Rows       int    `json:"rows"`
+	ID            string `json:"id"`
+	Type          string `json:"type"`
+	CategoryID    int64  `json:"categoryId,omitempty"`
+	Visualization string `json:"visualization,omitempty"`
+	X             int    `json:"x"`
+	Y             int    `json:"y"`
+	Columns       int    `json:"cols"`
+	Rows          int    `json:"rows"`
 }
 
 // GetDashboardLayout returns the saved layout reconciled with the budget's current
@@ -143,7 +159,10 @@ func (s *Store) listDashboardCategoryIDs(ctx context.Context, userID, budgetID i
 func reconcileAndValidateDashboardLayout(layout DashboardLayout, categoryIDs []int64) (*DashboardLayout, error) {
 	if layout.Version != DashboardLayoutVersion &&
 		layout.Version != dashboardOriginalLayoutVersion &&
-		layout.Version != dashboardFineLayoutVersion {
+		layout.Version != dashboardFineLayoutVersion &&
+		layout.Version != dashboardCategoryOnlyLayoutVersion &&
+		layout.Version != dashboardChartLayoutVersion &&
+		layout.Version != dashboardBidirectionalLayoutVersion {
 		return nil, fmt.Errorf("%w: version must be %d", ErrInvalidDashboardLayout, DashboardLayoutVersion)
 	}
 
@@ -153,10 +172,42 @@ func reconcileAndValidateDashboardLayout(layout DashboardLayout, categoryIDs []i
 	}
 
 	seenCategoryIDs := make(map[int64]bool, len(categoryIDs))
-	widgets := make([]DashboardWidget, 0, len(categoryIDs))
+	seenWidgetIDs := make(map[string]bool, len(layout.Widgets))
+	widgets := make([]DashboardWidget, 0, len(layout.Widgets)+len(categoryIDs))
 	for _, widget := range layout.Widgets {
-		if !validCategoryIDs[widget.CategoryID] {
-			continue
+		switch widget.Type {
+		case DashboardWidgetTypeCategoryExpenses:
+			if widget.CategoryID <= 0 ||
+				widget.ID != dashboardCategoryWidgetID(widget.CategoryID) ||
+				widget.Visualization != "" {
+				return nil, fmt.Errorf("%w: invalid category widget", ErrInvalidDashboardLayout)
+			}
+
+			if !validCategoryIDs[widget.CategoryID] {
+				continue
+			}
+
+			if seenCategoryIDs[widget.CategoryID] {
+				return nil, fmt.Errorf("%w: duplicate category widget", ErrInvalidDashboardLayout)
+			}
+		case DashboardWidgetTypeCategoryBreakdown:
+			if (layout.Version != DashboardLayoutVersion &&
+				layout.Version != dashboardBidirectionalLayoutVersion &&
+				layout.Version != dashboardChartLayoutVersion) ||
+				widget.CategoryID != 0 ||
+				!dashboardCategoryBreakdownWidgetIDPattern.MatchString(widget.ID) {
+				return nil, fmt.Errorf("%w: invalid category breakdown widget", ErrInvalidDashboardLayout)
+			}
+
+			if layout.Version < DashboardLayoutVersion && widget.Visualization == "" {
+				widget.Visualization = DashboardVisualizationPie
+			}
+
+			if !isDashboardVisualizationSupported(widget.Visualization) {
+				return nil, fmt.Errorf("%w: invalid category breakdown visualization", ErrInvalidDashboardLayout)
+			}
+		default:
+			return nil, fmt.Errorf("%w: unknown widget type", ErrInvalidDashboardLayout)
 		}
 
 		switch layout.Version {
@@ -172,14 +223,22 @@ func reconcileAndValidateDashboardLayout(layout DashboardLayout, categoryIDs []i
 			}
 
 			widget = halveDashboardWidget(widget)
+		case dashboardCategoryOnlyLayoutVersion, dashboardChartLayoutVersion:
+			if err := validateDashboardWidgetGeometryWithin(
+				widget,
+				dashboardMinimumWidgetColumns,
+				dashboardMaximumWidgetColumns,
+				dashboardMinimumWidgetRows,
+				dashboardMaximumWidgetRows,
+				dashboardInitialGridColumns,
+				dashboardMaximumGridRows,
+			); err != nil {
+				return nil, err
+			}
 		}
 
-		if widget.Type != DashboardWidgetTypeCategoryExpenses || widget.ID != dashboardCategoryWidgetID(widget.CategoryID) {
-			return nil, fmt.Errorf("%w: invalid category widget", ErrInvalidDashboardLayout)
-		}
-
-		if seenCategoryIDs[widget.CategoryID] {
-			return nil, fmt.Errorf("%w: duplicate category widget", ErrInvalidDashboardLayout)
+		if seenWidgetIDs[widget.ID] {
+			return nil, fmt.Errorf("%w: duplicate widget ID", ErrInvalidDashboardLayout)
 		}
 
 		if err := validateDashboardWidgetGeometry(widget); err != nil {
@@ -192,7 +251,10 @@ func reconcileAndValidateDashboardLayout(layout DashboardLayout, categoryIDs []i
 			}
 		}
 
-		seenCategoryIDs[widget.CategoryID] = true
+		seenWidgetIDs[widget.ID] = true
+		if widget.Type == DashboardWidgetTypeCategoryExpenses {
+			seenCategoryIDs[widget.CategoryID] = true
+		}
 		widgets = append(widgets, widget)
 	}
 
@@ -212,14 +274,26 @@ func reconcileAndValidateDashboardLayout(layout DashboardLayout, categoryIDs []i
 	return &DashboardLayout{Version: DashboardLayoutVersion, Widgets: widgets}, nil
 }
 
+func isDashboardVisualizationSupported(visualization string) bool {
+	switch visualization {
+	case DashboardVisualizationPie,
+		DashboardVisualizationDonut,
+		DashboardVisualizationBar,
+		DashboardVisualizationTreemap:
+		return true
+	default:
+		return false
+	}
+}
+
 func validateDashboardWidgetGeometry(widget DashboardWidget) error {
 	return validateDashboardWidgetGeometryWithin(
 		widget,
 		dashboardMinimumWidgetColumns,
-		dashboardGridColumns,
+		dashboardMaximumWidgetColumns,
 		dashboardMinimumWidgetRows,
 		dashboardMaximumWidgetRows,
-		dashboardGridColumns,
+		dashboardMaximumGridColumns,
 		dashboardMaximumGridRows,
 	)
 }
@@ -274,7 +348,7 @@ func nextDashboardWidgetPosition(categoryID int64, widgets []DashboardWidget) (D
 	}
 
 	for y := 0; y <= dashboardMaximumGridRows-dashboardDefaultWidgetRows; y++ {
-		for x := 0; x <= dashboardGridColumns-dashboardDefaultWidgetColumns; x++ {
+		for x := 0; x <= dashboardInitialGridColumns-dashboardDefaultWidgetColumns; x++ {
 			widget.X = x
 			widget.Y = y
 			isAvailable := true

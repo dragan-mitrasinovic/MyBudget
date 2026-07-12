@@ -55,6 +55,27 @@ func TestCategoryRequestNormalizeAndValidate(t *testing.T) {
 	}
 }
 
+func TestCategoryColorRequestNormalizeAndValidate(t *testing.T) {
+	customHex := "  #a1b2c3  "
+	req := categoryColorRequest{ColorKey: " chart-4 ", ColorHex: &customHex}
+	if err := req.normalizeAndValidate(); err != nil {
+		t.Fatalf("normalizeAndValidate() error = %v", err)
+	}
+
+	if req.ColorKey != "chart-4" || req.ColorHex == nil || *req.ColorHex != "#A1B2C3" {
+		t.Errorf("normalized request = %#v", req)
+	}
+
+	invalidHex := "#12345"
+	if err := (&categoryColorRequest{ColorKey: "chart-1", ColorHex: &invalidHex}).normalizeAndValidate(); err == nil {
+		t.Error("invalid colorHex error = nil")
+	}
+
+	if err := (&categoryColorRequest{ColorKey: "unknown"}).normalizeAndValidate(); err == nil {
+		t.Error("invalid colorKey error = nil")
+	}
+}
+
 func TestCategoryEndpointsCreateAndMapDomainErrors(t *testing.T) {
 	st, handler := openHTTPTestServer(t, false)
 	user, sessionID := createHTTPTestUserSession(t, st, "category-owner")
@@ -109,5 +130,39 @@ func TestCategoryEndpointsCreateAndMapDomainErrors(t *testing.T) {
 	systemResponse := requestCategory(http.MethodPatch, updatePath, `{"name":"Other"}`)
 	if systemResponse.Code != http.StatusForbidden {
 		t.Errorf("system category update status = %d, want %d", systemResponse.Code, http.StatusForbidden)
+	}
+}
+
+func TestCategoryColorEndpointUpdatesSystemCategory(t *testing.T) {
+	st, handler := openHTTPTestServer(t, false)
+	user, sessionID := createHTTPTestUserSession(t, st, "category-owner")
+	budget, err := st.CreateBudget(t.Context(), user.ID, "Household", "EUR")
+	if err != nil {
+		t.Fatalf("create budget: %v", err)
+	}
+
+	categories, err := st.ListCategories(t.Context(), user.ID, budget.ID)
+	if err != nil {
+		t.Fatalf("list categories: %v", err)
+	}
+
+	path := "/api/categories/" + strconv.FormatInt(categories[0].ID, 10) + "/color"
+	request := httptest.NewRequest(http.MethodPut, path, bytes.NewBufferString(`{"colorKey":"chart-5","colorHex":"#abcdef"}`))
+	request.Header.Set("Origin", testAppOrigin)
+	request.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionID})
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("update color status = %d, want %d", response.Code, http.StatusOK)
+	}
+
+	var updated store.Category
+	if err := json.NewDecoder(response.Body).Decode(&updated); err != nil {
+		t.Fatalf("decode updated category: %v", err)
+	}
+
+	if updated.ColorKey != "chart-5" || updated.ColorHex == nil || *updated.ColorHex != "#ABCDEF" {
+		t.Errorf("updated category = %#v", updated)
 	}
 }

@@ -38,6 +38,11 @@
         }
       </span>
 
+      <button mat-button type="button" [matMenuTriggerFor]="addChartMenu">
+        <mat-icon>add_chart</mat-icon>
+        Add chart
+      </button>
+
       <button mat-flat-button type="button" (click)="addExpense()">
         <mat-icon>add</mat-icon>
         Add expense
@@ -48,17 +53,47 @@
   <gridster class="dashboard-grid" [options]="gridOptions">
     @for (widget of dashboardWidgets(); track widget.id) {
       <gridster-item class="dashboard-item" [item]="widget">
-        @if (categoryById().get(widget.categoryId); as category) {
-          <app-category-expense-widget
-            [category]="category"
-            [expenses]="expensesByCategory().get(widget.categoryId) ?? []"
+        @if (isCategoryExpensesWidget(widget)) {
+          @if (categoryById().get(widget.categoryId); as category) {
+            <app-category-expense-widget
+              [category]="category"
+              [expenses]="expensesByCategory().get(widget.categoryId) ?? []"
+              [currency]="b.currency"
+              (addRequested)="addExpense($event)"
+              (editRequested)="editExpense($event)"
+              (deleteRequested)="removeExpense($event)"
+            />
+          }
+        } @else if (isCategoryBreakdownWidget(widget)) {
+          <app-category-breakdown-widget
+            [spending]="categorySpending()"
             [currency]="b.currency"
-            (addRequested)="addExpense($event)"
-            (editRequested)="editExpense($event)"
-            (deleteRequested)="removeExpense($event)"
+            [visualization]="widget.visualization"
+            (colorEditRequested)="editCategoryColor($event)"
+            (visualizationChangeRequested)="changeCategoryBreakdownVisualization(widget.id, $event)"
+            (removeRequested)="removeDashboardWidget(widget.id)"
           />
         }
       </gridster-item>
     }
   </gridster>
+
+  <mat-menu #addChartMenu="matMenu">
+    <button mat-menu-item type="button" (click)="addCategoryBreakdownChart('pie')">
+      <mat-icon>pie_chart</mat-icon>
+      <span>Pie chart</span>
+    </button>
+    <button mat-menu-item type="button" (click)="addCategoryBreakdownChart('donut')">
+      <mat-icon>donut_large</mat-icon>
+      <span>Donut chart</span>
+    </button>
+    <button mat-menu-item type="button" (click)="addCategoryBreakdownChart('bar')">
+      <mat-icon>bar_chart</mat-icon>
+      <span>Horizontal bars</span>
+    </button>
+    <button mat-menu-item type="button" (click)="addCategoryBreakdownChart('treemap')">
+      <mat-icon>view_quilt</mat-icon>
+      <span>Treemap</span>
+    </button>
+  </mat-menu>
 }

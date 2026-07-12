@@ -1,7 +1,7 @@
 # 0017. Persisted customizable budget dashboard
 
 Date: 2026-07-12
-Status: Accepted
+Status: Superseded by ADR-0019
 
 ## Context
 

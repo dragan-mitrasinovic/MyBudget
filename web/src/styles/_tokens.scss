@@ -20,4 +20,19 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-8: 3rem;
+
+  // Persisted category palette. Keys are an API contract; values remain theme-owned.
+  --chart-1: rgb(255 77 109);
+  --chart-2: rgb(255 159 28);
+  --chart-3: rgb(255 214 10);
+  --chart-4: rgb(46 196 182);
+  --chart-5: rgb(0 180 216);
+  --chart-6: rgb(58 134 255);
+  --chart-7: rgb(67 97 238);
+  --chart-8: rgb(131 56 236);
+  --chart-9: rgb(255 0 110);
+  --chart-10: rgb(6 214 160);
+  --chart-11: rgb(138 201 38);
+  --chart-12: rgb(251 86 7);
+  --chart-neutral: var(--mat-sys-outline);
 }

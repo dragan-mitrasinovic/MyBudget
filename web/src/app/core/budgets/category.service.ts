@@ -3,7 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { Category } from './category.models';
+import { Category, CategoryColorInput } from './category.models';
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {
@@ -33,6 +33,17 @@ export class CategoryService {
   async update(budgetId: number, categoryId: number, name: string): Promise<void> {
     await firstValueFrom(
       this.http.patch<Category>(`${this.api}/categories/${categoryId}`, { name }),
+    );
+    await this.load(budgetId);
+  }
+
+  async updateColor(
+    budgetId: number,
+    categoryId: number,
+    input: CategoryColorInput,
+  ): Promise<void> {
+    await firstValueFrom(
+      this.http.put<Category>(`${this.api}/categories/${categoryId}/color`, input),
     );
     await this.load(budgetId);
   }

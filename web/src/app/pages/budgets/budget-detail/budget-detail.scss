@@ -62,7 +62,7 @@
   display: block;
   height: calc(100dvh - 14rem);
   min-height: 32rem;
-  overflow: hidden;
+  overflow: auto;
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 0.5rem;
   background: var(--mat-sys-surface-container-low);

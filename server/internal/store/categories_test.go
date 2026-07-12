@@ -21,6 +21,55 @@ func TestCreateCategoryRejectsDuplicateName(t *testing.T) {
 	}
 }
 
+func TestCreateCategoryAssignsDistinctPaletteColors(t *testing.T) {
+	st := openTestStore(t)
+	user := createStoreTestUser(t, st, "category-owner")
+	budget := createStoreTestBudget(t, st, user.ID, "Household")
+	ctx := context.Background()
+
+	food, err := st.CreateCategory(ctx, user.ID, budget.ID, "Food")
+	if err != nil {
+		t.Fatalf("create Food category: %v", err)
+	}
+
+	transport, err := st.CreateCategory(ctx, user.ID, budget.ID, "Transport")
+	if err != nil {
+		t.Fatalf("create Transport category: %v", err)
+	}
+
+	if food.ColorKey != "chart-1" || transport.ColorKey != "chart-2" {
+		t.Errorf("assigned colors = %q, %q, want chart-1, chart-2", food.ColorKey, transport.ColorKey)
+	}
+}
+
+func TestUpdateCategoryColorAllowsSystemCategoryAndChecksOwnership(t *testing.T) {
+	st := openTestStore(t)
+	owner := createStoreTestUser(t, st, "category-owner")
+	other := createStoreTestUser(t, st, "other-user")
+	budget := createStoreTestBudget(t, st, owner.ID, "Household")
+	ctx := context.Background()
+
+	categories, err := st.ListCategories(ctx, owner.ID, budget.ID)
+	if err != nil {
+		t.Fatalf("list categories: %v", err)
+	}
+	systemCategory := categories[0]
+	customHex := "#AABBCC"
+
+	updated, err := st.UpdateCategoryColor(ctx, owner.ID, systemCategory.ID, "chart-3", &customHex)
+	if err != nil {
+		t.Fatalf("update system category color: %v", err)
+	}
+
+	if updated.ColorKey != "chart-3" || updated.ColorHex == nil || *updated.ColorHex != customHex {
+		t.Errorf("updated category = %#v, want chart-3 with %s override", updated, customHex)
+	}
+
+	if _, err := st.UpdateCategoryColor(ctx, other.ID, systemCategory.ID, "chart-1", nil); !errors.Is(err, ErrNotFound) {
+		t.Errorf("other user's update error = %v, want ErrNotFound", err)
+	}
+}
+
 func TestSystemCategoryCannotBeModified(t *testing.T) {
 	st := openTestStore(t)
 	user := createStoreTestUser(t, st, "category-owner")

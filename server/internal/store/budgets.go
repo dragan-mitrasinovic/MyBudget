@@ -49,10 +49,10 @@ func (s *Store) CreateBudget(ctx context.Context, userID int64, name, currency s
 	}
 
 	const insertCategory = `
-		INSERT INTO categories (budget_id, name, is_system, created_at)
-		VALUES (?, ?, 1, ?)`
+		INSERT INTO categories (budget_id, name, is_system, color_key, created_at)
+		VALUES (?, ?, 1, ?, ?)`
 
-	if _, err := tx.ExecContext(ctx, insertCategory, budgetID, uncategorizedCategoryName, now); err != nil {
+	if _, err := tx.ExecContext(ctx, insertCategory, budgetID, uncategorizedCategoryName, uncategorizedColorKey, now); err != nil {
 		return nil, err
 	}
 

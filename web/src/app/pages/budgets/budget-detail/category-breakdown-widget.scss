@@ -1,0 +1,145 @@
+:host {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.breakdown-widget {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-1);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.dashboard-drag-handle {
+  flex: 0 0 auto;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: grab;
+}
+
+.dashboard-drag-handle:active {
+  cursor: grabbing;
+}
+
+.widget-heading {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.widget-title {
+  overflow: hidden;
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.widget-total {
+  display: block;
+  overflow: hidden;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.widget-content {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  padding: var(--space-3);
+}
+
+.chart-layout {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(9rem, 1fr) minmax(10rem, 0.9fr);
+  gap: var(--space-3);
+}
+
+.chart-container {
+  position: relative;
+  min-width: 0;
+  min-height: 10rem;
+  overflow: auto;
+}
+
+.bar-chart {
+  position: relative;
+  min-width: 0;
+}
+
+.chart-legend {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.legend-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.legend-swatch {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  background-color: var(--category-color);
+  border: 2px solid var(--mat-sys-surface-container-lowest);
+  box-shadow: 0 0 0 1px var(--mat-sys-outline-variant);
+}
+
+.legend-copy {
+  display: block;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: var(--space-1) 0;
+}
+
+.legend-name,
+.legend-value {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legend-name {
+  font: var(--mat-sys-label-large);
+}
+
+.legend-value {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.empty-hint {
+  margin: var(--space-4) var(--space-2);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@container (width < 30rem) {
+  .chart-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(10rem, 1fr) auto;
+  }
+
+  .chart-legend {
+    max-height: 8rem;
+  }
+}
