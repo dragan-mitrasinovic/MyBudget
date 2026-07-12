@@ -23,40 +23,65 @@
 } @else {
   <div class="budget-grid">
     @for (b of budgets(); track b.id) {
-      <mat-card
-        appearance="outlined"
-        class="budget-card"
-        role="button"
-        tabindex="0"
-        [attr.aria-label]="'Open ' + b.name"
-        (click)="open(b)"
-        (keydown.enter)="open(b)"
-      >
-        <mat-card-header>
-          <mat-card-title>{{ b.name }}</mat-card-title>
-          <mat-card-subtitle>{{ b.currency }}</mat-card-subtitle>
-          <button
-            mat-icon-button
-            type="button"
-            class="card-menu"
-            aria-label="Budget actions"
-            [matMenuTriggerFor]="menu"
-            (click)="$event.stopPropagation()"
-          >
-            <mat-icon>more_vert</mat-icon>
-          </button>
-          <mat-menu #menu="matMenu">
-            <button mat-menu-item type="button" (click)="edit(b)">
-              <mat-icon>edit</mat-icon>
-              <span>Edit</span>
-            </button>
-            <button mat-menu-item type="button" (click)="remove(b)">
-              <mat-icon>delete</mat-icon>
-              <span>Delete</span>
-            </button>
-          </mat-menu>
-        </mat-card-header>
+      <mat-card appearance="outlined" class="budget-card">
+        <a
+          class="budget-card-link"
+          [routerLink]="['/budgets', b.id]"
+          [attr.aria-label]="'Open ' + b.name"
+        >
+          <mat-card-header>
+            <div mat-card-avatar class="budget-avatar" aria-hidden="true">
+              <mat-icon>account_balance_wallet</mat-icon>
+            </div>
+            <mat-card-title>{{ b.name }}</mat-card-title>
+            <mat-card-subtitle>{{
+              b.archived ? 'Archived budget' : 'Active budget'
+            }}</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content class="budget-card-content">
+            <dl class="budget-details">
+              <div>
+                <dt>Currency</dt>
+                <dd>{{ b.currency }}</dd>
+              </div>
+              <div>
+                <dt>Last updated</dt>
+                <dd>{{ b.updatedAt | date: 'mediumDate' }}</dd>
+              </div>
+            </dl>
+          </mat-card-content>
+
+          <mat-card-actions class="budget-card-actions">
+            <span>View budget</span>
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </mat-card-actions>
+        </a>
+
+        <button
+          mat-icon-button
+          type="button"
+          class="card-menu"
+          aria-label="Budget actions"
+          [matMenuTriggerFor]="menu"
+          [matMenuTriggerData]="{ $implicit: b }"
+        >
+          <mat-icon>more_vert</mat-icon>
+        </button>
       </mat-card>
     }
   </div>
+
+  <mat-menu #menu="matMenu">
+    <ng-template matMenuContent let-budget>
+      <button mat-menu-item type="button" (click)="edit(budget)">
+        <mat-icon>edit</mat-icon>
+        <span>Edit</span>
+      </button>
+      <button mat-menu-item type="button" (click)="remove(budget)">
+        <mat-icon>delete</mat-icon>
+        <span>Delete</span>
+      </button>
+    </ng-template>
+  </mat-menu>
 }

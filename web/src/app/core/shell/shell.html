@@ -38,14 +38,53 @@
         <a
           mat-list-item
           routerLink="/budgets"
-          routerLinkActive
+          routerLinkActive="active-destination"
           #budgetsLink="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
           [activated]="budgetsLink.isActive"
+          ariaCurrentWhenActive="page"
           (click)="closeNavigationOnHandset(sideNav)"
         >
           <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
           <span matListItemTitle>Budgets</span>
         </a>
+
+        @if (sidebarBudgets().length > 0) {
+          <div class="budget-subnav" aria-label="Budget shortcuts">
+            @for (budget of sidebarBudgets(); track budget.id) {
+              <a
+                mat-list-item
+                class="budget-link"
+                [routerLink]="['/budgets', budget.id]"
+                routerLinkActive="active-budget"
+                #budgetLink="routerLinkActive"
+                [routerLinkActiveOptions]="{ exact: true }"
+                [activated]="budgetLink.isActive"
+                ariaCurrentWhenActive="page"
+                [matTooltip]="budget.name"
+                matTooltipPosition="right"
+                (click)="closeNavigationOnHandset(sideNav)"
+              >
+                <span matListItemTitle>{{ budget.name }}</span>
+              </a>
+            }
+
+            @if (overflowBudgets().length > 0) {
+              <button
+                mat-list-item
+                type="button"
+                class="more-budgets"
+                [class.active-budget]="overflowBudgetActive()"
+                [activated]="overflowBudgetActive()"
+                [matMenuTriggerFor]="budgetMenu"
+                [attr.aria-label]="'Show ' + overflowBudgets().length + ' more budgets'"
+              >
+                <span matListItemTitle>More budgets</span>
+                <span matListItemMeta>{{ overflowBudgets().length }}</span>
+              </button>
+            }
+          </div>
+        }
       </mat-nav-list>
     </mat-sidenav>
 
@@ -53,6 +92,22 @@
       <router-outlet />
     </mat-sidenav-content>
   </mat-sidenav-container>
+
+  <mat-menu #budgetMenu="matMenu">
+    @for (budget of overflowBudgets(); track budget.id) {
+      <a
+        mat-menu-item
+        class="overflow-budget-link"
+        [routerLink]="['/budgets', budget.id]"
+        routerLinkActive="active-overflow-budget"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+        (click)="closeNavigationOnHandset(sideNav)"
+      >
+        <span>{{ budget.name }}</span>
+      </a>
+    }
+  </mat-menu>
 
   <mat-menu #themeMenu="matMenu">
     <button

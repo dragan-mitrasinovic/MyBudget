@@ -12,11 +12,17 @@ export class BudgetService {
 
   /** The user's budgets, newest first. Drives change detection (zoneless). */
   readonly budgets = signal<Budget[]>([]);
+  readonly loading = signal(true);
 
   /** Refresh the budget list from the API. */
   async load(): Promise<void> {
-    const budgets = await firstValueFrom(this.http.get<Budget[]>(`${this.api}/budgets`));
-    this.budgets.set(budgets);
+    this.loading.set(true);
+    try {
+      const budgets = await firstValueFrom(this.http.get<Budget[]>(`${this.api}/budgets`));
+      this.budgets.set(budgets);
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   /** Fetch a single budget by id. */

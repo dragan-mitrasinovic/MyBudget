@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,9 +10,10 @@ import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SocialAuthService } from '@abacritt/angularx-social-login';
-import { map } from 'rxjs';
+import { filter, map } from 'rxjs';
 
 import { AuthService } from '../auth/auth.service';
+import { BudgetService } from '../budgets/budget.service';
 import { ThemePreference, ThemeService } from '../theme/theme.service';
 
 @Component({
@@ -32,20 +33,42 @@ import { ThemePreference, ThemeService } from '../theme/theme.service';
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
-export class Shell {
+export class Shell implements OnInit {
   private auth = inject(AuthService);
+  private budgetService = inject(BudgetService);
   private social = inject(SocialAuthService);
   private router = inject(Router);
   private breakpointObserver = inject(BreakpointObserver);
   private theme = inject(ThemeService);
 
   readonly user = this.auth.user;
+  readonly budgets = this.budgetService.budgets;
+  readonly sidebarBudgets = computed(() => this.budgets().slice(0, 10));
+  readonly overflowBudgets = computed(() => this.budgets().slice(10));
   readonly themePreference = this.theme.preference;
   readonly effectiveColorScheme = this.theme.effectiveColorScheme;
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+  readonly activeBudgetId = computed(() => {
+    const match = /^\/budgets\/(\d+)(?:[/?#]|$)/.exec(this.currentUrl());
+    return match ? Number(match[1]) : null;
+  });
+  readonly overflowBudgetActive = computed(() =>
+    this.overflowBudgets().some((budget) => budget.id === this.activeBudgetId()),
+  );
   readonly isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
     { initialValue: false },
   );
+
+  async ngOnInit(): Promise<void> {
+    await this.budgetService.load();
+  }
 
   closeNavigationOnHandset(sideNav: MatSidenav): void {
     if (this.isHandset()) {

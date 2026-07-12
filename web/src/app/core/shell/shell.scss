@@ -35,6 +35,31 @@
 
   // Give the nav rail a distinct surface tone so it reads as a panel.
   background: var(--mat-sys-surface-container);
+
+  --mat-list-active-indicator-shape: var(--mat-sys-corner-extra-small);
+}
+
+.budget-subnav {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--space-2);
+}
+
+.budget-link,
+.more-budgets {
+  padding-inline-start: var(--space-6);
+}
+
+.budget-link.active-budget,
+.more-budgets.active-budget {
+  background: var(--mat-sys-secondary-container);
+
+  --mat-list-list-item-label-text-color: var(--mat-sys-on-secondary-container);
+}
+
+.active-overflow-budget {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
 }
 
 .content {

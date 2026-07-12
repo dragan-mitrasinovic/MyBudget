@@ -1,5 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -16,6 +17,8 @@ import { BudgetFormDialog } from './budget-form-dialog';
 @Component({
   selector: 'app-budgets',
   imports: [
+    DatePipe,
+    RouterLink,
     MatButtonModule,
     MatCardModule,
     MatDialogModule,
@@ -26,21 +29,13 @@ import { BudgetFormDialog } from './budget-form-dialog';
   templateUrl: './budgets.html',
   styleUrl: './budgets.scss',
 })
-export class Budgets implements OnInit {
+export class Budgets {
   private service = inject(BudgetService);
   private dialog = inject(MatDialog);
   private router = inject(Router);
 
   readonly budgets = this.service.budgets;
-  readonly loading = signal(true);
-
-  async ngOnInit(): Promise<void> {
-    try {
-      await this.service.load();
-    } finally {
-      this.loading.set(false);
-    }
-  }
+  readonly loading = this.service.loading;
 
   open(budget: Budget): void {
     this.router.navigate(['/budgets', budget.id]);

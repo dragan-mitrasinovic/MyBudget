@@ -28,6 +28,8 @@ _Unsorted, capture-anything. Groom later._
         (2026-07-12)
   - [x] Phase 7 — Configurable Pie, Donut, horizontal Bar, and Treemap presentations for the
         all-time category breakdown (2026-07-12)
+  - [x] Phase 8 — One-click budget shortcuts in the sidenav with overflow and active-route
+        highlighting, plus richer budget overview cards (2026-07-12)
   - [ ] Later session — spend-over-time charts; add server-side summary aggregation when expense
         pagination or broader analytics makes client-side aggregation incomplete
 
