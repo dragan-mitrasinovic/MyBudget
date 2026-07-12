@@ -25,6 +25,7 @@ import { Category } from '../../../core/budgets/category.models';
 import { CategorySpending } from '../../../core/budgets/category-spending';
 import { CategoryBreakdownVisualization } from '../../../core/budgets/dashboard.models';
 import { MoneyPipe } from '../../../core/budgets/money.pipe';
+import { ThemeService } from '../../../core/theme/theme.service';
 
 interface CategoryBreakdownLegendItem extends CategorySpending {
   color: string;
@@ -69,6 +70,7 @@ interface CategoryTreemapSource extends Record<string, unknown> {
 })
 export class CategoryBreakdownWidget {
   private document = inject(DOCUMENT);
+  private theme = inject(ThemeService);
 
   readonly spending = input.required<readonly CategorySpending[]>();
   readonly currency = input.required<string>();
@@ -282,6 +284,7 @@ export class CategoryBreakdownWidget {
   private resolveTokenColor(token: string): string {
     const probe = this.document.createElement('span');
     probe.style.color = `var(${token})`;
+    probe.style.colorScheme = this.theme.effectiveColorScheme();
     probe.style.display = 'none';
     this.document.body.append(probe);
     const color = this.document.defaultView?.getComputedStyle(probe).color ?? '';

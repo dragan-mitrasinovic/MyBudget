@@ -33,6 +33,7 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Adaptive System / Light / Dark theme with a browser-local preference (2026-07-12)
 - [x] Defined mutable development-stage migration history until prerelease (2026-07-11)
 - [x] Simplified budgets to tracking-only containers across UI, API, and database (2026-07-11)
 - [x] Basic backend test suite covering request validation, data ownership and integrity, and

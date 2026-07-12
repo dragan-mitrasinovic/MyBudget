@@ -1,13 +1,29 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { Category } from '../../../core/budgets/category.models';
+import { ThemeService } from '../../../core/theme/theme.service';
 import { CategoryBreakdownWidget } from './category-breakdown-widget';
 
 describe('CategoryBreakdownWidget', () => {
+  const effectiveColorScheme = signal<'light' | 'dark'>('light');
+
+  beforeEach(() => {
+    effectiveColorScheme.set('light');
+    TestBed.configureTestingModule({
+      imports: [CategoryBreakdownWidget],
+      providers: [
+        {
+          provide: ThemeService,
+          useValue: { effectiveColorScheme: effectiveColorScheme.asReadonly() },
+        },
+      ],
+    });
+  });
+
   afterEach(() => TestBed.resetTestingModule());
 
   it('builds shared legend and Pie data from category spending', () => {
-    TestBed.configureTestingModule({ imports: [CategoryBreakdownWidget] });
     const fixture = TestBed.createComponent(CategoryBreakdownWidget);
     const component = fixture.componentInstance;
     const food = category(1, 'Food', '#0072B2');
@@ -32,7 +48,6 @@ describe('CategoryBreakdownWidget', () => {
   });
 
   it('builds Donut, horizontal Bar, and Treemap data from the same totals', () => {
-    TestBed.configureTestingModule({ imports: [CategoryBreakdownWidget] });
     const fixture = TestBed.createComponent(CategoryBreakdownWidget);
     const component = fixture.componentInstance;
     const food = category(1, 'Food', '#FF4D6D');
@@ -57,7 +72,6 @@ describe('CategoryBreakdownWidget', () => {
   });
 
   it('emits only actual visualization changes', () => {
-    TestBed.configureTestingModule({ imports: [CategoryBreakdownWidget] });
     const fixture = TestBed.createComponent(CategoryBreakdownWidget);
     const component = fixture.componentInstance;
     fixture.componentRef.setInput('currency', 'EUR');
@@ -71,6 +85,27 @@ describe('CategoryBreakdownWidget', () => {
 
     expect(emitted).toHaveBeenCalledOnce();
     expect(emitted).toHaveBeenCalledWith('treemap');
+  });
+
+  it('rebuilds theme-owned canvas colors when the effective scheme changes', () => {
+    const fixture = TestBed.createComponent(CategoryBreakdownWidget);
+    const component = fixture.componentInstance;
+    fixture.componentRef.setInput('currency', 'EUR');
+    fixture.componentRef.setInput('visualization', 'pie');
+    fixture.componentRef.setInput('spending', [
+      { category: category(1, 'Food', '#0072B2'), amountMinor: 7500 },
+    ]);
+    const lightPieData = component.pieData();
+    const lightDonutData = component.donutData();
+    const lightBarOptions = component.barOptions();
+    const lightTreemapData = component.treemapData();
+
+    effectiveColorScheme.set('dark');
+
+    expect(component.pieData()).not.toBe(lightPieData);
+    expect(component.donutData()).not.toBe(lightDonutData);
+    expect(component.barOptions()).not.toBe(lightBarOptions);
+    expect(component.treemapData()).not.toBe(lightTreemapData);
   });
 });
 

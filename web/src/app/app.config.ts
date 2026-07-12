@@ -16,6 +16,7 @@ import {
 
 import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
+import { ThemeService } from './core/theme/theme.service';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withFetch()),
     provideNativeDateAdapter(),
+    provideAppInitializer(() => inject(ThemeService).initialize()),
     provideAppInitializer(() => inject(AuthService).init()),
     {
       // angularx-social-login: SocialAuthService (providedIn root) reads this token.

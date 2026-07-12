@@ -5,6 +5,19 @@
     <title>MyBudget</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (() => {
+        try {
+          const preference = localStorage.getItem('mybudget.theme');
+          if (preference === 'light' || preference === 'dark') {
+            document.documentElement.dataset['theme'] = preference;
+          }
+        } catch {
+          // Browser policy can disable storage; the system preference remains active.
+        }
+      })();
+    </script>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

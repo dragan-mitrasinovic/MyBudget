@@ -5,12 +5,15 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { SocialAuthService } from '@abacritt/angularx-social-login';
 import { map } from 'rxjs';
 
 import { AuthService } from '../auth/auth.service';
+import { ThemePreference, ThemeService } from '../theme/theme.service';
 
 @Component({
   selector: 'app-shell',
@@ -21,8 +24,10 @@ import { AuthService } from '../auth/auth.service';
     MatButtonModule,
     MatIconModule,
     MatListModule,
+    MatMenuModule,
     MatSidenavModule,
     MatToolbarModule,
+    MatTooltipModule,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
@@ -32,8 +37,11 @@ export class Shell {
   private social = inject(SocialAuthService);
   private router = inject(Router);
   private breakpointObserver = inject(BreakpointObserver);
+  private theme = inject(ThemeService);
 
   readonly user = this.auth.user;
+  readonly themePreference = this.theme.preference;
+  readonly effectiveColorScheme = this.theme.effectiveColorScheme;
   readonly isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
     { initialValue: false },
@@ -43,6 +51,10 @@ export class Shell {
     if (this.isHandset()) {
       void sideNav.close();
     }
+  }
+
+  setThemePreference(preference: ThemePreference): void {
+    this.theme.setPreference(preference);
   }
 
   async logout(): Promise<void> {
