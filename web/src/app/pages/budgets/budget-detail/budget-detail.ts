@@ -1,50 +1,69 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Component, OnDestroy, OnInit, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import {
+  CompactType,
+  DisplayGrid,
+  Gridster,
+  GridsterConfig,
+  GridsterItem,
+  GridType,
+} from 'angular-gridster2';
 import { firstValueFrom } from 'rxjs';
 
 import { Budget } from '../../../core/budgets/budget.models';
 import { BudgetService } from '../../../core/budgets/budget.service';
 import { Category } from '../../../core/budgets/category.models';
 import { CategoryService } from '../../../core/budgets/category.service';
+import {
+  DashboardLayout,
+  DashboardWidget,
+  dashboardLayoutVersion,
+} from '../../../core/budgets/dashboard.models';
+import { DashboardService } from '../../../core/budgets/dashboard.service';
 import { Expense } from '../../../core/budgets/expense.models';
 import { ExpenseService } from '../../../core/budgets/expense.service';
-import { MoneyPipe } from '../../../core/budgets/money.pipe';
 import { ConfirmData, ConfirmDialog } from '../../../shared/confirm-dialog/confirm-dialog';
 import { CategoryFormDialog } from '../category-form-dialog';
 import { ExpenseDialogData, ExpenseFormDialog } from '../expense-form-dialog';
+import { CategoryExpenseWidget } from './category-expense-widget';
+
+type LayoutSaveState = 'saved' | 'saving' | 'error';
+
+const dashboardGridColumnScale = 3;
+const dashboardGridRowScale = 2;
 
 @Component({
   selector: 'app-budget-detail',
   imports: [
+    CategoryExpenseWidget,
+    Gridster,
+    GridsterItem,
     MatButtonModule,
-    MatCardModule,
     MatDialogModule,
     MatIconModule,
-    MatListModule,
-    MatMenuModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MoneyPipe,
   ],
   templateUrl: './budget-detail.html',
   styleUrl: './budget-detail.scss',
 })
-export class BudgetDetail implements OnInit {
+export class BudgetDetail implements OnInit, OnDestroy {
   private budgetService = inject(BudgetService);
   private categoryService = inject(CategoryService);
+  private dashboardService = inject(DashboardService);
   private expenseService = inject(ExpenseService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
+  private dashboardSaveTimeout: ReturnType<typeof setTimeout> | undefined;
+  private isDashboardSaveInFlight = false;
+  private hasQueuedDashboardSave = false;
 
   /** Bound from the `:id` route param (withComponentInputBinding). */
   readonly id = input.required<string>();
@@ -52,22 +71,75 @@ export class BudgetDetail implements OnInit {
   readonly budget = signal<Budget | null>(null);
   readonly categories = this.categoryService.categories;
   readonly expenses = this.expenseService.expenses;
-  readonly categoryNames = computed(() => new Map(this.categories().map((c) => [c.id, c.name])));
-  readonly totalMinor = computed(() =>
-    this.expenses().reduce((sum, expense) => sum + expense.amountMinor, 0),
-  );
+  readonly dashboardWidgets = signal<DashboardWidget[]>([]);
+  readonly categoryById = computed(() => new Map(this.categories().map((c) => [c.id, c])));
+  readonly expensesByCategory = computed(() => {
+    const grouped = new Map<number, Expense[]>();
+    for (const expense of this.expenses()) {
+      const categoryExpenses = grouped.get(expense.categoryId) ?? [];
+      categoryExpenses.push(expense);
+      grouped.set(expense.categoryId, categoryExpenses);
+    }
+
+    return grouped;
+  });
   readonly loading = signal(true);
   readonly notFound = signal(false);
+  readonly layoutSaveState = signal<LayoutSaveState>('saved');
+  readonly gridOptions: GridsterConfig = {
+    gridType: GridType.VerticalFixed,
+    compactType: CompactType.None,
+    minCols: 12 * dashboardGridColumnScale,
+    maxCols: 12 * dashboardGridColumnScale,
+    minRows: 1,
+    maxRows: 10000 * dashboardGridRowScale,
+    fixedRowHeight: 32,
+    margin: 0,
+    outerMargin: false,
+    mobileBreakpoint: 700,
+    keepFixedHeightInMobile: true,
+    minItemCols: 3 * dashboardGridColumnScale,
+    maxItemCols: 12 * dashboardGridColumnScale,
+    minItemRows: 3 * dashboardGridRowScale,
+    maxItemRows: 12 * dashboardGridRowScale,
+    pushItems: true,
+    pushResizeItems: true,
+    disablePushOnResize: true,
+    displayGrid: DisplayGrid.OnDragAndResize,
+    enableBoundaryControl: true,
+    draggable: {
+      enabled: true,
+      ignoreContent: true,
+      dragHandleClass: 'dashboard-drag-handle',
+      stop: () => this.scheduleDashboardSave(),
+    },
+    resizable: {
+      enabled: true,
+      handles: {
+        s: true,
+        e: true,
+        n: true,
+        w: true,
+        se: false,
+        ne: false,
+        sw: false,
+        nw: false,
+      },
+      stop: () => this.scheduleDashboardSave(),
+    },
+  };
 
   async ngOnInit(): Promise<void> {
     const budgetId = Number(this.id());
     try {
-      const [budget] = await Promise.all([
+      const [budget, layout] = await Promise.all([
         this.budgetService.get(budgetId),
+        this.dashboardService.get(budgetId),
         this.categoryService.load(budgetId),
         this.expenseService.load(budgetId),
       ]);
       this.budget.set(budget);
+      this.setDashboardLayout(layout);
     } catch {
       this.notFound.set(true);
     } finally {
@@ -122,6 +194,7 @@ export class BudgetDetail implements OnInit {
   private async runCategoryAction(action: () => Promise<void>): Promise<void> {
     try {
       await action();
+      await this.loadDashboardLayout();
     } catch (err) {
       const conflict = err instanceof HttpErrorResponse && err.status === 409;
       const message = conflict
@@ -131,15 +204,15 @@ export class BudgetDetail implements OnInit {
     }
   }
 
-  addExpense(): void {
+  addExpense(defaultCategoryId: number | null = null): void {
     this.dialog.open<ExpenseFormDialog, ExpenseDialogData, boolean>(ExpenseFormDialog, {
-      data: this.expenseDialogData(null),
+      data: this.expenseDialogData(null, defaultCategoryId),
     });
   }
 
   editExpense(expense: Expense): void {
     this.dialog.open<ExpenseFormDialog, ExpenseDialogData, boolean>(ExpenseFormDialog, {
-      data: this.expenseDialogData(expense),
+      data: this.expenseDialogData(expense, null),
     });
   }
 
@@ -165,22 +238,91 @@ export class BudgetDetail implements OnInit {
     }
   }
 
-  formatDate(iso: string): string {
-    const [y, m, d] = iso.split('-').map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+  ngOnDestroy(): void {
+    if (this.dashboardSaveTimeout !== undefined) {
+      clearTimeout(this.dashboardSaveTimeout);
+      this.dashboardSaveTimeout = undefined;
+      void this.persistDashboardLayout();
+    }
   }
 
-  private expenseDialogData(expense: Expense | null): ExpenseDialogData {
+  private expenseDialogData(
+    expense: Expense | null,
+    defaultCategoryId: number | null,
+  ): ExpenseDialogData {
     return {
       budgetId: Number(this.id()),
       currency: this.budget()?.currency ?? '',
       categories: this.categories(),
       expense,
-      defaultCategoryId: null,
+      defaultCategoryId,
+    };
+  }
+
+  private async loadDashboardLayout(): Promise<void> {
+    const layout = await this.dashboardService.get(Number(this.id()));
+    this.setDashboardLayout(layout);
+  }
+
+  private setDashboardLayout(layout: DashboardLayout): void {
+    this.dashboardWidgets.set(layout.widgets.map((widget) => ({ ...widget })));
+  }
+
+  private scheduleDashboardSave(): void {
+    this.cancelScheduledDashboardSave();
+    this.layoutSaveState.set('saving');
+    this.dashboardSaveTimeout = setTimeout(() => {
+      this.dashboardSaveTimeout = undefined;
+      void this.persistDashboardLayout();
+    }, 300);
+  }
+
+  private cancelScheduledDashboardSave(): void {
+    if (this.dashboardSaveTimeout !== undefined) {
+      clearTimeout(this.dashboardSaveTimeout);
+      this.dashboardSaveTimeout = undefined;
+    }
+  }
+
+  private async persistDashboardLayout(): Promise<void> {
+    if (this.isDashboardSaveInFlight) {
+      this.hasQueuedDashboardSave = true;
+      return;
+    }
+
+    this.isDashboardSaveInFlight = true;
+    let didSave = false;
+    try {
+      await this.dashboardService.save(Number(this.id()), this.dashboardLayoutSnapshot());
+      didSave = true;
+    } catch {
+      this.layoutSaveState.set('error');
+      this.snackBar.open('Could not save the dashboard layout. Please try again.', 'Dismiss', {
+        duration: 4000,
+      });
+    } finally {
+      this.isDashboardSaveInFlight = false;
+      if (this.hasQueuedDashboardSave) {
+        this.hasQueuedDashboardSave = false;
+        void this.persistDashboardLayout();
+      } else if (didSave && this.dashboardSaveTimeout === undefined) {
+        this.layoutSaveState.set('saved');
+      }
+    }
+  }
+
+  private dashboardLayoutSnapshot(): DashboardLayout {
+    return {
+      version: dashboardLayoutVersion,
+      widgets: this.dashboardWidgets().map((widget) => ({
+        id: widget.id,
+        type: widget.type,
+        categoryId: widget.categoryId,
+        x: widget.x,
+        y: widget.y,
+        cols: widget.cols,
+        rows: widget.rows,
+      })),
     };
   }
 }

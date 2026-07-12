@@ -31,6 +31,8 @@ behavior changes.
 | `GET`         | `/api/budgets/{id}`            | Required                 | Get one owned budget                                         |
 | `PATCH`       | `/api/budgets/{id}`            | Required                 | Replace the editable fields of one owned budget              |
 | `DELETE`      | `/api/budgets/{id}`            | Required                 | Delete a budget, its categories, and its expenses            |
+| `GET`         | `/api/budgets/{id}/dashboard`  | Required                 | Get the reconciled dashboard layout for one owned budget     |
+| `PUT`         | `/api/budgets/{id}/dashboard`  | Required                 | Replace the dashboard layout for one owned budget            |
 | `GET`         | `/api/budgets/{id}/categories` | Required                 | List categories in one owned budget                          |
 | `POST`        | `/api/budgets/{id}/categories` | Required                 | Add a category to one owned budget                           |
 | `PATCH`       | `/api/categories/{id}`         | Required                 | Rename one owned category                                    |
@@ -64,7 +66,7 @@ Requests made before the renewal interval authenticate without writing or reissu
 A missing, unknown, or expired session receives `401 Unauthorized` on protected endpoints.
 Expired session rows are deleted best-effort when resolved.
 
-Every `POST`, `PATCH`, and `DELETE` route requires an `Origin` header that exactly matches
+Every `POST`, `PUT`, `PATCH`, and `DELETE` route requires an `Origin` header that exactly matches
 `APP_ORIGIN`. A missing or different Origin receives `403 Forbidden` with `forbidden`; the
 handler is not invoked. Read-only routes do not require Origin. The development-only
 `GET /api/dev/login` is the sole state-changing GET exception and remains directly visitable in
@@ -135,6 +137,30 @@ returned.
 ```
 
 Expenses do not store or return `budgetId`; their budget is reached through their category.
+
+### Dashboard layout
+
+```json
+{
+  "version": 3,
+  "widgets": [
+    {
+      "id": "category-expenses:34",
+      "type": "category-expenses",
+      "categoryId": 34,
+      "x": 0,
+      "y": 0,
+      "cols": 12,
+      "rows": 10
+    }
+  ]
+}
+```
+
+Version 3 uses a 36-column grid and 32-pixel rows. `x` and `y` are zero-based coordinates;
+`cols` and `rows` are the widget dimensions. A category expense widget's ID is always
+`category-expenses:{categoryId}`. The server accepts version-1 layouts (12 columns and 64-pixel
+rows) and version-2 layouts (72 columns and 16-pixel rows), returning both upgraded to version 3.
 
 ## Shared data rules
 
@@ -345,7 +371,7 @@ Errors:
 ### `DELETE /api/budgets/{id}`
 
 Deletes one owned budget. Foreign-key cascades delete its categories and all expenses belonging
-to those categories.
+to those categories, as well as its saved dashboard layout.
 
 Success: `204 No Content`.
 
@@ -355,6 +381,59 @@ Errors:
 - `401 Unauthorized`: invalid session.
 - `404 Not Found`: missing budget or budget owned by another user.
 - `500 Internal Server Error`: deletion failed.
+
+## Dashboard endpoints
+
+Dashboard layouts belong to one budget and therefore transitively to its owner. Every current
+category has exactly one `category-expenses` widget in the response.
+
+The server reconciles layouts with category changes on both reads and writes. Widgets for
+categories that no longer belong to the budget are discarded, while missing current categories
+receive the first available default 12-by-10 position. This makes category creation and deletion
+safe even when a client is holding an older layout. Reconciliation returned by `GET` is not
+itself a database write.
+
+Version 3 validation rules:
+
+- `version` must be `3`. Versions `1` and `2` are accepted in their respective legacy grid units
+  and upgraded in the response.
+- Each retained widget must use `type: "category-expenses"`, have the exact derived `id`, and be
+  the only widget for its `categoryId`.
+- `x` and `y` must be non-negative. `cols` must be 9-36, `rows` must be 6-24,
+  `x + cols` must not exceed 36, and `y + rows` must not exceed 20000.
+- Retained widgets cannot overlap.
+
+### `GET /api/budgets/{id}/dashboard`
+
+Returns the saved layout reconciled with the budget's current categories. When no layout has
+been saved, returns a deterministic default layout with category widgets placed left to right,
+then top to bottom.
+
+Success: `200 OK` with a Dashboard layout.
+
+Errors:
+
+- `400 Bad Request`: invalid budget ID.
+- `401 Unauthorized`: invalid session.
+- `404 Not Found`: missing budget or budget owned by another user.
+- `500 Internal Server Error`: the layout could not be loaded or decoded.
+
+### `PUT /api/budgets/{id}/dashboard`
+
+Validates, reconciles, and replaces the saved layout. The response is authoritative and includes
+any category reconciliation or legacy layout upgrade performed by the server.
+
+Request: a complete Dashboard layout object.
+
+Success: `200 OK` with the saved, reconciled Dashboard layout.
+
+Errors:
+
+- `400 Bad Request`: invalid budget ID, malformed JSON, unsupported layout version, invalid
+  widget identity or geometry, duplicate category widget, or overlapping widgets.
+- `401 Unauthorized`: invalid session.
+- `404 Not Found`: missing budget or budget owned by another user.
+- `500 Internal Server Error`: persistence failed.
 
 ## Category endpoints
 

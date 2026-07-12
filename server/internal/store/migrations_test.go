@@ -11,11 +11,11 @@ import (
 func TestOpenAppliesMigrations(t *testing.T) {
 	st := openTestStore(t)
 
-	if version := readDatabaseVersion(t, st.db); version != 1 {
-		t.Fatalf("database version = %d, want 1", version)
+	if version := readDatabaseVersion(t, st.db); version != 2 {
+		t.Fatalf("database version = %d, want 2", version)
 	}
 
-	for _, table := range []string{"users", "sessions", "budgets", "categories", "expenses"} {
+	for _, table := range []string{"users", "sessions", "budgets", "categories", "expenses", "dashboard_layouts"} {
 		if !tableExists(t, st.db, table) {
 			t.Errorf("table %q does not exist", table)
 		}
@@ -54,8 +54,8 @@ func TestOpenAdoptsExistingUnversionedSchemaWithoutDataLoss(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = st.Close() })
 
-	if version := readDatabaseVersion(t, st.db); version != 1 {
-		t.Fatalf("database version = %d, want 1", version)
+	if version := readDatabaseVersion(t, st.db); version != 2 {
+		t.Fatalf("database version = %d, want 2", version)
 	}
 
 	var userCount int
@@ -92,8 +92,8 @@ func TestOpenAlreadyMigratedDatabaseIsNoOp(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = st.Close() })
 
-	if version := readDatabaseVersion(t, st.db); version != 1 {
-		t.Fatalf("database version = %d, want 1", version)
+	if version := readDatabaseVersion(t, st.db); version != 2 {
+		t.Fatalf("database version = %d, want 2", version)
 	}
 
 	var userCount int

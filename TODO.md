@@ -19,8 +19,9 @@ _Unsorted, capture-anything. Groom later._
       [ADR-0011](docs/adr/0011-budgets-categories-expenses-data-model.md).
   - [x] Phase 1 — Budgets CRUD (auto-creates Uncategorized) + app-shell refactor (2026-07-05)
   - [x] Phase 2 — Categories CRUD (deleting one reassigns its expenses to Uncategorized) (2026-07-09)
-  - [x] Phase 3 — Expenses CRUD (`spent_at` date defaulting to today, quick "save & add another") (2026-07-09)
-            - [x] Added concise optional expense descriptions as the primary UI label (2026-07-11)
+  - [x] Phase 3 — Expenses CRUD (`spent_at` date defaulting to today, quick "save & add another") (2026-07-09) - [x] Added concise optional expense descriptions as the primary UI label (2026-07-11)
+  - [x] Phase 4 — Persisted customizable desktop dashboard with movable, resizable
+        category-expense widgets (2026-07-12)
   - [ ] Later session — charts + category colours (option C): category breakdown & spend
         over time, `GET /api/budgets/{id}/summary`, chart-library ADR, token palette +
         custom-hex override

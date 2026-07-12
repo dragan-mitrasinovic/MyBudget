@@ -1,0 +1,72 @@
+<mat-card appearance="outlined" class="category-widget">
+  <header class="widget-header">
+    <button
+      mat-icon-button
+      type="button"
+      class="dashboard-drag-handle"
+      [attr.aria-label]="'Move ' + category().name + ' section'"
+      matTooltip="Move section"
+    >
+      <mat-icon>drag_indicator</mat-icon>
+    </button>
+
+    <div class="widget-heading">
+      <h2 class="widget-title">{{ category().name }}</h2>
+      <span class="widget-total">{{ totalMinor() | money: currency() }}</span>
+    </div>
+
+    <button
+      mat-icon-button
+      type="button"
+      [attr.aria-label]="'Add expense to ' + category().name"
+      matTooltip="Add expense"
+      (click)="addRequested.emit(category().id)"
+    >
+      <mat-icon>add</mat-icon>
+    </button>
+  </header>
+
+  <mat-card-content class="widget-content">
+    @if (expenses().length === 0) {
+      <p class="empty-hint">No expenses in this category.</p>
+    } @else {
+      <mat-list class="expense-list">
+        @for (expense of expenses(); track expense.id) {
+          <mat-list-item>
+            <span matListItemTitle class="expense-title">
+              {{ expense.description || category().name }}
+            </span>
+            <span matListItemLine class="expense-sub">{{ formatDate(expense.spentAt) }}</span>
+            <span matListItemMeta class="expense-meta">
+              <span class="expense-amount">
+                {{ expense.amountMinor | money: currency() }}
+              </span>
+              <button
+                mat-icon-button
+                type="button"
+                [matMenuTriggerFor]="expenseMenu"
+                [matMenuTriggerData]="{ $implicit: expense }"
+                aria-label="Expense actions"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            </span>
+          </mat-list-item>
+        }
+      </mat-list>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-menu #expenseMenu="matMenu">
+  <ng-template matMenuContent let-expense>
+    <button mat-menu-item type="button" (click)="editRequested.emit(expense)">
+      <mat-icon>edit</mat-icon>
+      <span>Edit</span>
+    </button>
+    <button mat-menu-item type="button" (click)="deleteRequested.emit(expense)">
+      <mat-icon>delete</mat-icon>
+      <span>Delete</span>
+    </button>
+  </ng-template>
+</mat-menu>

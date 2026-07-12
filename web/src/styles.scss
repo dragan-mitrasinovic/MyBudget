@@ -37,4 +37,69 @@ body {
   margin: 0;
   height: 100%;
 }
+
+.dashboard-grid {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.dashboard-grid .gridster-column,
+.dashboard-grid .gridster-row {
+  border-color: var(--mat-sys-outline-variant);
+}
+
+.dashboard-grid .gridster-preview {
+  background: var(--mat-sys-primary-container);
+}
+
+.dashboard-grid .dashboard-item {
+  padding: var(--space-2);
+  background: transparent;
+  box-shadow: none;
+}
+
+.dashboard-grid.mobile .dashboard-drag-handle {
+  display: none;
+}
+
+.dashboard-grid .gridster-item-resizable-handler::after {
+  position: absolute;
+  background: var(--mat-sys-outline);
+  content: '';
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.dashboard-grid .gridster-item-resizable-handler:hover::after {
+  opacity: 1;
+}
+
+.dashboard-grid .gridster-item-resizable-handler.handle-n::after,
+.dashboard-grid .gridster-item-resizable-handler.handle-s::after {
+  right: var(--space-4);
+  left: var(--space-4);
+  height: 2px;
+}
+
+.dashboard-grid .gridster-item-resizable-handler.handle-n::after {
+  top: 0;
+}
+
+.dashboard-grid .gridster-item-resizable-handler.handle-s::after {
+  bottom: 0;
+}
+
+.dashboard-grid .gridster-item-resizable-handler.handle-e::after,
+.dashboard-grid .gridster-item-resizable-handler.handle-w::after {
+  top: var(--space-4);
+  bottom: var(--space-4);
+  width: 2px;
+}
+
+.dashboard-grid .gridster-item-resizable-handler.handle-e::after {
+  right: 0;
+}
+
+.dashboard-grid .gridster-item-resizable-handler.handle-w::after {
+  left: 0;
+}
 /* You can add global styles to this file, and also import other style files */

@@ -9,11 +9,13 @@ import { Budget } from '../../../core/budgets/budget.models';
 import { BudgetService } from '../../../core/budgets/budget.service';
 import { Category } from '../../../core/budgets/category.models';
 import { CategoryService } from '../../../core/budgets/category.service';
+import { DashboardLayout, dashboardLayoutVersion } from '../../../core/budgets/dashboard.models';
+import { DashboardService } from '../../../core/budgets/dashboard.service';
 import { Expense } from '../../../core/budgets/expense.models';
 import { ExpenseService } from '../../../core/budgets/expense.service';
 import { BudgetDetail } from './budget-detail';
 
-describe('BudgetDetail expense descriptions', () => {
+describe('BudgetDetail dashboard', () => {
   const budget: Budget = {
     id: 12,
     name: 'Household',
@@ -61,19 +63,35 @@ describe('BudgetDetail expense descriptions', () => {
     },
   ];
 
-  afterEach(() => TestBed.resetTestingModule());
+  const layout: DashboardLayout = {
+    version: dashboardLayoutVersion,
+    widgets: categories.map((category, index) => ({
+      id: `category-expenses:${category.id}`,
+      type: 'category-expenses',
+      categoryId: category.id,
+      x: index * 12,
+      y: 0,
+      cols: 12,
+      rows: 10,
+    })),
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+    TestBed.resetTestingModule();
+  });
 
   it('uses description as the primary label and category as the blank fallback', async () => {
-    const { component, fixture } = await setup();
+    const { fixture } = await setup();
     const root = fixture.nativeElement as HTMLElement;
     const titles = Array.from(root.querySelectorAll<HTMLElement>('.expense-title'), normalizedText);
     const details = Array.from(root.querySelectorAll<HTMLElement>('.expense-sub'), normalizedText);
 
     expect(titles).toEqual(['Burgers', 'Groceries']);
-    expect(details).toEqual([
-      `Eating out · ${component.formatDate('2026-07-11')}`,
-      component.formatDate('2026-07-10'),
-    ]);
+    expect(details).toEqual([formatDate('2026-07-11'), formatDate('2026-07-10')]);
+    expect(Array.from(root.querySelectorAll<HTMLElement>('.widget-title'), normalizedText)).toEqual(
+      ['Eating out', 'Groceries'],
+    );
   });
 
   it('identifies described expenses in delete confirmation copy', async () => {
@@ -86,16 +104,68 @@ describe('BudgetDetail expense descriptions', () => {
     expect(dialogMessage()).toBe('This expense will be permanently deleted.');
   });
 
+  it('persists changed widget geometry after dragging stops', async () => {
+    const { component, saveDashboard } = await setup();
+    vi.useFakeTimers();
+    const widget = component.dashboardWidgets()[0];
+    widget.x = 24;
+    widget.y = 12;
+
+    component.gridOptions.draggable?.stop?.(widget, null as never, new MouseEvent('mouseup'));
+
+    expect(saveDashboard).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(saveDashboard).toHaveBeenCalledWith(12, {
+      version: dashboardLayoutVersion,
+      widgets: [{ ...layout.widgets[0], x: 24, y: 12 }, layout.widgets[1]],
+    });
+    expect(component.layoutSaveState()).toBe('saved');
+  });
+
+  it('uses granular grid steps without changing default widget size', async () => {
+    const { component } = await setup();
+
+    expect(component.gridOptions.maxCols).toBe(36);
+    expect(component.gridOptions.fixedRowHeight).toBe(32);
+    expect(component.gridOptions.minItemCols).toBe(9);
+    expect(component.gridOptions.minItemRows).toBe(6);
+    expect(component.dashboardWidgets()[0]).toMatchObject({ cols: 12, rows: 10 });
+  });
+
+  it('resizes from edges and shrinks adjacent widgets instead of pushing them', async () => {
+    const { component } = await setup();
+
+    expect(component.gridOptions.resizable?.handles).toEqual({
+      n: true,
+      e: true,
+      s: true,
+      w: true,
+      ne: false,
+      nw: false,
+      se: false,
+      sw: false,
+    });
+    expect(component.gridOptions.pushResizeItems).toBe(true);
+    expect(component.gridOptions.disablePushOnResize).toBe(true);
+  });
+
   async function setup(): Promise<{
     component: BudgetDetail;
     fixture: ComponentFixture<BudgetDetail>;
     dialogMessage: () => string;
+    saveDashboard: ReturnType<
+      typeof vi.fn<(budgetId: number, value: DashboardLayout) => Promise<DashboardLayout>>
+    >;
   }> {
     const categorySignal = signal(categories);
     const expenseSignal = signal(expenses);
     const get = vi.fn<(id: number) => Promise<Budget>>();
     const loadCategories = vi.fn<(budgetId: number) => Promise<void>>();
     const loadExpenses = vi.fn<(budgetId: number) => Promise<void>>();
+    const getDashboard = vi.fn<(budgetId: number) => Promise<DashboardLayout>>();
+    const saveDashboard =
+      vi.fn<(budgetId: number, value: DashboardLayout) => Promise<DashboardLayout>>();
     let lastDialogConfig: { data: { message: string } } | undefined;
     const dialog = {
       open: (component: unknown, config: unknown) => {
@@ -107,6 +177,8 @@ describe('BudgetDetail expense descriptions', () => {
     get.mockResolvedValue(budget);
     loadCategories.mockResolvedValue(undefined);
     loadExpenses.mockResolvedValue(undefined);
+    getDashboard.mockResolvedValue(layout);
+    saveDashboard.mockResolvedValue(layout);
 
     TestBed.configureTestingModule({
       imports: [BudgetDetail],
@@ -120,6 +192,7 @@ describe('BudgetDetail expense descriptions', () => {
           provide: ExpenseService,
           useValue: { expenses: expenseSignal, load: loadExpenses, remove: vi.fn() },
         },
+        { provide: DashboardService, useValue: { get: getDashboard, save: saveDashboard } },
         { provide: MatSnackBar, useValue: { open: vi.fn() } },
         { provide: Router, useValue: { navigate: vi.fn() } },
       ],
@@ -139,10 +212,20 @@ describe('BudgetDetail expense descriptions', () => {
       component: fixture.componentInstance,
       fixture,
       dialogMessage: () => lastDialogConfig?.data.message ?? '',
+      saveDashboard,
     };
   }
 
   function normalizedText(element: HTMLElement): string {
     return element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+  }
+
+  function formatDate(iso: string): string {
+    const [year, month, day] = iso.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   }
 });

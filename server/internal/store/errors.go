@@ -7,10 +7,11 @@ import (
 
 // Sentinel errors mapped to HTTP status codes by the transport layer.
 var (
-	ErrNotFound        = errors.New("not found")
-	ErrSystemCategory  = errors.New("cannot modify the system category")
-	ErrDuplicateName   = errors.New("name already exists")
-	ErrInvalidCategory = errors.New("category does not belong to this budget")
+	ErrNotFound               = errors.New("not found")
+	ErrSystemCategory         = errors.New("cannot modify the system category")
+	ErrDuplicateName          = errors.New("name already exists")
+	ErrInvalidCategory        = errors.New("category does not belong to this budget")
+	ErrInvalidDashboardLayout = errors.New("invalid dashboard layout")
 )
 
 // isUniqueViolation reports whether err is a SQLite UNIQUE constraint failure.
