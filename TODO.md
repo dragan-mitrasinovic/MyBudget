@@ -35,6 +35,10 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Eight persistent app styles spanning editorial, playful, technical, industrial, luxury, and
+      neon identities, with independent System / Light / Dark mode in one visual Appearance dialog
+      (2026-07-12)
+- [x] Made both New budget actions rectangular with theme-aware Material shape tokens (2026-07-12)
 - [x] Adaptive System / Light / Dark theme with a browser-local preference (2026-07-12)
 - [x] Defined mutable development-stage migration history until prerelease (2026-07-11)
 - [x] Simplified budgets to tracking-only containers across UI, API, and database (2026-07-11)

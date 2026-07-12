@@ -1,0 +1,1060 @@
+@use '@angular/material' as mat;
+
+$manrope: 'Manrope Variable', sans-serif;
+$newsreader: 'Newsreader Variable', serif;
+$barlow-condensed: 'Barlow Condensed', sans-serif;
+$ibm-plex-mono: 'IBM Plex Mono', monospace;
+$fredoka: 'Fredoka Variable', sans-serif;
+$space-grotesk: 'Space Grotesk Variable', sans-serif;
+$orbitron: 'Orbitron Variable', sans-serif;
+
+@mixin app-theme-typography($body-font, $display-font) {
+  @include mat.theme-overrides(
+    (
+      body-large-font: $body-font,
+      body-medium-font: $body-font,
+      body-small-font: $body-font,
+      label-large-font: $body-font,
+      label-medium-font: $body-font,
+      label-small-font: $body-font,
+      title-large-font: $display-font,
+      title-medium-font: $display-font,
+      title-small-font: $body-font,
+      headline-large-font: $display-font,
+      headline-medium-font: $display-font,
+      headline-small-font: $display-font,
+    )
+  );
+}
+
+html[data-app-theme='soft-ledger'] {
+  @include app-theme-typography($manrope, $newsreader);
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(rgb(38 103 76), rgb(137 220 174)),
+      on-primary: light-dark(rgb(255 255 255), rgb(5 57 36)),
+      primary-container: light-dark(rgb(198 239 214), rgb(24 78 54)),
+      on-primary-container: light-dark(rgb(12 54 37), rgb(210 244 222)),
+      secondary: light-dark(rgb(82 92 75), rgb(185 201 177)),
+      on-secondary: light-dark(rgb(255 255 255), rgb(39 48 36)),
+      secondary-container: light-dark(rgb(221 229 211), rgb(62 71 57)),
+      on-secondary-container: light-dark(rgb(39 48 36), rgb(224 233 215)),
+      tertiary: light-dark(rgb(170 73 59), rgb(244 171 154)),
+      on-tertiary: light-dark(rgb(255 255 255), rgb(96 26 18)),
+      tertiary-container: light-dark(rgb(255 218 209), rgb(126 48 37)),
+      on-tertiary-container: light-dark(rgb(66 10 5), rgb(255 218 209)),
+      surface: light-dark(rgb(247 248 243), rgb(20 24 21)),
+      surface-dim: light-dark(rgb(221 223 216), rgb(20 24 21)),
+      surface-bright: light-dark(rgb(247 248 243), rgb(60 64 59)),
+      surface-container-lowest: light-dark(rgb(255 255 251), rgb(14 18 15)),
+      surface-container-low: light-dark(rgb(241 243 236), rgb(28 32 29)),
+      surface-container: light-dark(rgb(235 237 230), rgb(32 36 33)),
+      surface-container-high: light-dark(rgb(229 231 224), rgb(42 46 43)),
+      surface-container-highest: light-dark(rgb(223 225 218), rgb(53 57 53)),
+      on-surface: light-dark(rgb(28 32 29), rgb(226 227 222)),
+      on-surface-variant: light-dark(rgb(66 73 66), rgb(194 201 192)),
+      outline: light-dark(rgb(113 121 112), rgb(140 149 139)),
+      outline-variant: light-dark(rgb(194 201 192), rgb(66 73 66)),
+      corner-extra-small: 0.125rem,
+      corner-small: 0.25rem,
+      corner-medium: 0.375rem,
+      corner-large: 0.5rem,
+    )
+  );
+
+  --app-body-font: #{$manrope};
+  --app-display-font: #{$newsreader};
+  --app-toolbar-background: light-dark(rgb(31 73 55), rgb(17 49 37));
+  --app-toolbar-foreground: rgb(246 250 245);
+  --app-content-background: light-dark(rgb(247 248 243), rgb(20 24 21));
+  --app-canvas-background: light-dark(rgb(241 243 236), rgb(28 32 29));
+  --app-canvas-line: light-dark(rgb(72 104 86 / 12%), rgb(161 190 171 / 12%));
+  --app-page-pattern: none;
+  --app-canvas-pattern: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--space-6) - 1px),
+    var(--app-canvas-line) calc(var(--space-6) - 1px),
+    var(--app-canvas-line) var(--space-6)
+  );
+  --app-widget-background: light-dark(rgb(255 255 251), rgb(25 30 26));
+  --app-widget-header-background: light-dark(rgb(250 250 245), rgb(30 36 31));
+  --app-widget-border: light-dark(rgb(180 191 180), rgb(70 82 72));
+  --app-widget-shadow-color: light-dark(rgb(42 62 49 / 13%), rgb(0 0 0 / 32%));
+  --app-widget-shadow-y: var(--space-2);
+  --app-widget-shadow-blur: var(--space-5);
+  --app-widget-accent-width: 1px;
+  --app-grid-line-opacity: 0;
+  --app-active-mark: var(--mat-sys-tertiary);
+
+  --chart-1: light-dark(rgb(196 76 72), rgb(239 133 123));
+  --chart-2: light-dark(rgb(190 126 34), rgb(232 177 78));
+  --chart-3: light-dark(rgb(132 139 48), rgb(182 192 86));
+  --chart-4: light-dark(rgb(58 132 88), rgb(98 186 127));
+  --chart-5: light-dark(rgb(38 132 133), rgb(76 186 183));
+  --chart-6: light-dark(rgb(58 108 153), rgb(101 155 202));
+  --chart-7: light-dark(rgb(84 91 151), rgb(130 139 198));
+  --chart-8: light-dark(rgb(124 76 132), rgb(174 123 181));
+  --chart-9: light-dark(rgb(171 67 103), rgb(222 117 149));
+  --chart-10: light-dark(rgb(37 145 109), rgb(83 197 154));
+  --chart-11: light-dark(rgb(91 139 55), rgb(145 189 98));
+  --chart-12: light-dark(rgb(183 82 42), rgb(228 130 84));
+}
+
+html[data-app-theme='color-coded-studio'] {
+  @include app-theme-typography($manrope, $manrope);
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(rgb(0 101 101), rgb(82 220 214)),
+      on-primary: light-dark(rgb(255 255 255), rgb(0 55 55)),
+      primary-container: light-dark(rgb(150 242 236), rgb(0 79 79)),
+      on-primary-container: light-dark(rgb(0 56 56), rgb(169 247 242)),
+      secondary: light-dark(rgb(74 92 91), rgb(178 204 201)),
+      on-secondary: light-dark(rgb(255 255 255), rgb(31 50 49)),
+      secondary-container: light-dark(rgb(205 232 229), rgb(53 72 70)),
+      on-secondary-container: light-dark(rgb(31 50 49), rgb(205 232 229)),
+      tertiary: light-dark(rgb(181 58 91), rgb(255 176 191)),
+      on-tertiary: light-dark(rgb(255 255 255), rgb(101 16 45)),
+      tertiary-container: light-dark(rgb(255 217 224), rgb(135 38 67)),
+      on-tertiary-container: light-dark(rgb(62 0 23), rgb(255 217 224)),
+      surface: light-dark(rgb(248 250 249), rgb(17 21 21)),
+      surface-dim: light-dark(rgb(216 220 219), rgb(17 21 21)),
+      surface-bright: light-dark(rgb(248 250 249), rgb(57 62 61)),
+      surface-container-lowest: light-dark(rgb(255 255 255), rgb(11 15 15)),
+      surface-container-low: light-dark(rgb(242 244 243), rgb(25 29 29)),
+      surface-container: light-dark(rgb(236 239 238), rgb(29 33 33)),
+      surface-container-high: light-dark(rgb(230 233 232), rgb(39 43 43)),
+      surface-container-highest: light-dark(rgb(224 227 226), rgb(50 54 54)),
+      on-surface: light-dark(rgb(26 29 29), rgb(225 227 226)),
+      on-surface-variant: light-dark(rgb(63 73 72), rgb(190 201 199)),
+      outline: light-dark(rgb(110 121 119), rgb(136 148 146)),
+      outline-variant: light-dark(rgb(190 201 199), rgb(63 73 72)),
+      corner-extra-small: 0.25rem,
+      corner-small: 0.375rem,
+      corner-medium: 0.5rem,
+      corner-large: 0.5rem,
+    )
+  );
+
+  --app-body-font: #{$manrope};
+  --app-display-font: #{$manrope};
+  --app-toolbar-background: light-dark(rgb(0 74 76), rgb(8 47 49));
+  --app-toolbar-foreground: rgb(239 255 253);
+  --app-content-background: light-dark(rgb(248 250 249), rgb(17 21 21));
+  --app-canvas-background: light-dark(rgb(238 243 241), rgb(22 28 28));
+  --app-canvas-line: light-dark(rgb(20 95 93 / 10%), rgb(110 208 201 / 10%));
+  --app-page-pattern: radial-gradient(
+    circle at center,
+    var(--app-canvas-line) 1px,
+    transparent 1px
+  );
+  --app-canvas-pattern: none;
+  --app-widget-background: light-dark(rgb(255 255 255), rgb(27 33 33));
+  --app-widget-header-background: light-dark(rgb(249 251 250), rgb(32 39 39));
+  --app-widget-border: light-dark(rgb(194 204 202), rgb(66 78 76));
+  --app-widget-shadow-color: light-dark(rgb(20 65 64 / 12%), rgb(0 0 0 / 30%));
+  --app-widget-shadow-y: var(--space-1);
+  --app-widget-shadow-blur: var(--space-4);
+  --app-widget-accent-width: var(--space-1);
+  --app-grid-line-opacity: 0;
+  --app-active-mark: var(--mat-sys-tertiary);
+
+  --chart-1: light-dark(rgb(215 54 91), rgb(255 112 143));
+  --chart-2: light-dark(rgb(223 112 26), rgb(255 158 70));
+  --chart-3: light-dark(rgb(181 148 0), rgb(232 204 49));
+  --chart-4: light-dark(rgb(0 145 105), rgb(54 207 160));
+  --chart-5: light-dark(rgb(0 135 157), rgb(55 197 218));
+  --chart-6: light-dark(rgb(39 105 196), rgb(99 157 238));
+  --chart-7: light-dark(rgb(83 80 199), rgb(137 133 243));
+  --chart-8: light-dark(rgb(139 68 190), rgb(191 123 235));
+  --chart-9: light-dark(rgb(198 54 150), rgb(245 112 196));
+  --chart-10: light-dark(rgb(0 151 133), rgb(53 215 193));
+  --chart-11: light-dark(rgb(92 145 24), rgb(149 202 75));
+  --chart-12: light-dark(rgb(202 73 21), rgb(247 128 73));
+}
+
+html[data-app-theme='bright-utility'] {
+  @include app-theme-typography($manrope, $manrope);
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(rgb(18 105 73), rgb(72 222 157)),
+      on-primary: light-dark(rgb(255 255 255), rgb(0 57 36)),
+      primary-container: light-dark(rgb(164 246 203), rgb(0 80 53)),
+      on-primary-container: light-dark(rgb(0 57 36), rgb(177 250 211)),
+      secondary: light-dark(rgb(86 91 78), rgb(195 202 182)),
+      on-secondary: light-dark(rgb(255 255 255), rgb(43 48 36)),
+      secondary-container: light-dark(rgb(226 231 208), rgb(65 70 56)),
+      on-secondary-container: light-dark(rgb(43 48 36), rgb(226 231 208)),
+      tertiary: light-dark(rgb(190 65 63), rgb(255 178 170)),
+      on-tertiary: light-dark(rgb(255 255 255), rgb(105 22 22)),
+      tertiary-container: light-dark(rgb(255 218 214), rgb(143 43 42)),
+      on-tertiary-container: light-dark(rgb(65 0 4), rgb(255 218 214)),
+      surface: light-dark(rgb(250 250 247), rgb(19 21 19)),
+      surface-dim: light-dark(rgb(218 219 215), rgb(19 21 19)),
+      surface-bright: light-dark(rgb(250 250 247), rgb(59 62 59)),
+      surface-container-lowest: light-dark(rgb(255 255 255), rgb(13 15 13)),
+      surface-container-low: light-dark(rgb(244 244 241), rgb(27 29 27)),
+      surface-container: light-dark(rgb(238 239 235), rgb(31 33 31)),
+      surface-container-high: light-dark(rgb(232 233 229), rgb(41 43 41)),
+      surface-container-highest: light-dark(rgb(226 227 223), rgb(52 54 52)),
+      on-surface: light-dark(rgb(27 29 27), rgb(226 227 223)),
+      on-surface-variant: light-dark(rgb(67 72 65), rgb(195 201 190)),
+      outline: light-dark(rgb(115 121 111), rgb(142 148 138)),
+      outline-variant: light-dark(rgb(195 201 190), rgb(67 72 65)),
+      corner-extra-small: 0,
+      corner-small: 0.125rem,
+      corner-medium: 0.25rem,
+      corner-large: 0.375rem,
+    )
+  );
+
+  --app-body-font: #{$manrope};
+  --app-display-font: #{$manrope};
+  --app-toolbar-background: light-dark(rgb(29 47 40), rgb(20 38 32));
+  --app-toolbar-foreground: rgb(246 255 250);
+  --app-content-background: light-dark(rgb(250 250 247), rgb(19 21 19));
+  --app-canvas-background: light-dark(rgb(241 243 237), rgb(25 28 25));
+  --app-canvas-line: light-dark(rgb(26 83 61 / 12%), rgb(112 206 163 / 12%));
+  --app-page-pattern: linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 74%,
+    var(--app-canvas-line) 74%,
+    var(--app-canvas-line) 75%,
+    transparent 75%
+  );
+  --app-canvas-pattern: linear-gradient(to right, var(--app-canvas-line) 1px, transparent 1px);
+  --app-widget-background: light-dark(rgb(255 255 255), rgb(28 31 28));
+  --app-widget-header-background: light-dark(rgb(244 247 241), rgb(34 39 35));
+  --app-widget-border: light-dark(rgb(92 105 94), rgb(97 111 100));
+  --app-widget-shadow-color: light-dark(rgb(22 45 35 / 9%), rgb(0 0 0 / 24%));
+  --app-widget-shadow-y: 2px;
+  --app-widget-shadow-blur: var(--space-2);
+  --app-widget-accent-width: 2px;
+  --app-grid-line-opacity: 0.45;
+  --app-active-mark: rgb(216 236 63);
+
+  --chart-1: light-dark(rgb(213 55 65), rgb(255 111 119));
+  --chart-2: light-dark(rgb(226 112 0), rgb(255 164 55));
+  --chart-3: light-dark(rgb(156 147 0), rgb(215 209 54));
+  --chart-4: light-dark(rgb(0 145 88), rgb(52 211 139));
+  --chart-5: light-dark(rgb(0 137 145), rgb(48 205 207));
+  --chart-6: light-dark(rgb(35 105 184), rgb(91 161 231));
+  --chart-7: light-dark(rgb(83 80 183), rgb(139 135 232));
+  --chart-8: light-dark(rgb(135 67 168), rgb(191 125 215));
+  --chart-9: light-dark(rgb(193 53 132), rgb(241 112 180));
+  --chart-10: light-dark(rgb(0 150 117), rgb(45 214 174));
+  --chart-11: light-dark(rgb(86 143 24), rgb(145 201 73));
+  --chart-12: light-dark(rgb(197 69 17), rgb(245 128 68));
+}
+
+html[data-app-theme='signal-red'] {
+  @include app-theme-typography($manrope, $barlow-condensed);
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(rgb(183 24 36), rgb(255 111 108)),
+      on-primary: light-dark(rgb(255 255 255), rgb(99 0 12)),
+      primary-container: light-dark(rgb(255 218 216), rgb(143 0 20)),
+      on-primary-container: light-dark(rgb(65 0 7), rgb(255 218 216)),
+      secondary: light-dark(rgb(82 66 65), rgb(226 189 185)),
+      on-secondary: light-dark(rgb(255 255 255), rgb(66 42 40)),
+      secondary-container: light-dark(rgb(255 218 214), rgb(91 63 61)),
+      on-secondary-container: light-dark(rgb(44 21 20), rgb(255 218 214)),
+      tertiary: light-dark(rgb(38 76 185), rgb(174 197 255)),
+      on-tertiary: light-dark(rgb(255 255 255), rgb(0 39 117)),
+      tertiary-container: light-dark(rgb(219 225 255), rgb(12 55 151)),
+      on-tertiary-container: light-dark(rgb(0 24 77), rgb(219 225 255)),
+      surface: light-dark(rgb(250 248 246), rgb(20 18 18)),
+      surface-dim: light-dark(rgb(219 216 214), rgb(20 18 18)),
+      surface-bright: light-dark(rgb(250 248 246), rgb(62 57 57)),
+      surface-container-lowest: light-dark(rgb(255 255 255), rgb(14 12 12)),
+      surface-container-low: light-dark(rgb(244 242 240), rgb(29 26 26)),
+      surface-container: light-dark(rgb(238 236 234), rgb(34 30 30)),
+      surface-container-high: light-dark(rgb(232 230 228), rgb(44 40 40)),
+      surface-container-highest: light-dark(rgb(226 224 222), rgb(55 50 50)),
+      on-surface: light-dark(rgb(30 28 28), rgb(236 224 222)),
+      on-surface-variant: light-dark(rgb(78 68 67), rgb(216 194 191)),
+      outline: light-dark(rgb(126 115 113), rgb(160 140 137)),
+      outline-variant: light-dark(rgb(216 194 191), rgb(78 68 67)),
+      corner-extra-small: 0,
+      corner-small: 0,
+      corner-medium: 0,
+      corner-large: 0,
+      corner-full: 0,
+    )
+  );
+
+  --app-body-font: #{$manrope};
+  --app-display-font: #{$barlow-condensed};
+  --app-toolbar-background: light-dark(rgb(190 16 31), rgb(222 28 43));
+  --app-toolbar-foreground: rgb(255 245 242);
+  --app-content-background: light-dark(rgb(250 248 246), rgb(20 18 18));
+  --app-canvas-background: light-dark(rgb(231 226 222), rgb(31 27 26));
+  --app-canvas-line: light-dark(rgb(38 31 30 / 16%), rgb(255 214 0 / 18%));
+  --app-page-pattern: none;
+  --app-canvas-pattern: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent var(--space-3),
+    var(--app-canvas-line) var(--space-3),
+    var(--app-canvas-line) var(--space-4)
+  );
+  --app-widget-background: light-dark(rgb(255 255 255), rgb(28 24 24));
+  --app-widget-header-background: light-dark(rgb(244 240 237), rgb(38 30 30));
+  --app-widget-border: light-dark(rgb(47 39 38), rgb(206 168 164));
+  --app-widget-shadow-color: light-dark(rgb(38 31 30 / 42%), rgb(255 214 0 / 60%));
+  --app-widget-shadow-x: var(--space-1);
+  --app-widget-shadow-y: var(--space-1);
+  --app-widget-shadow-blur: 0;
+  --app-widget-accent-width: var(--space-1);
+  --app-grid-line-opacity: 0;
+  --app-active-mark: rgb(255 204 0);
+
+  --chart-1: light-dark(rgb(220 24 47), rgb(255 91 106));
+  --chart-2: light-dark(rgb(229 85 0), rgb(255 138 50));
+  --chart-3: light-dark(rgb(176 139 0), rgb(255 215 55));
+  --chart-4: light-dark(rgb(0 135 73), rgb(49 220 135));
+  --chart-5: light-dark(rgb(0 132 157), rgb(47 212 235));
+  --chart-6: light-dark(rgb(33 76 190), rgb(112 153 255));
+  --chart-7: light-dark(rgb(70 52 180), rgb(144 126 255));
+  --chart-8: light-dark(rgb(142 43 159), rgb(216 107 224));
+  --chart-9: light-dark(rgb(199 30 119), rgb(255 99 177));
+  --chart-10: light-dark(rgb(0 143 118), rgb(40 226 190));
+  --chart-11: light-dark(rgb(85 139 0), rgb(161 218 57));
+  --chart-12: light-dark(rgb(194 54 0), rgb(255 112 61));
+}
+
+html[data-app-theme='midnight-terminal'] {
+  @include app-theme-typography($ibm-plex-mono, $ibm-plex-mono);
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(rgb(0 116 67), rgb(93 255 158)),
+      on-primary: light-dark(rgb(255 255 255), rgb(0 58 31)),
+      primary-container: light-dark(rgb(153 247 190), rgb(0 85 48)),
+      on-primary-container: light-dark(rgb(0 55 29), rgb(176 255 205)),
+      secondary: light-dark(rgb(69 99 79), rgb(173 207 183)),
+      on-secondary: light-dark(rgb(255 255 255), rgb(23 54 36)),
+      secondary-container: light-dark(rgb(200 235 210), rgb(45 76 57)),
+      on-secondary-container: light-dark(rgb(23 54 36), rgb(200 235 210)),
+      tertiary: light-dark(rgb(160 94 0), rgb(255 190 72)),
+      on-tertiary: light-dark(rgb(255 255 255), rgb(86 47 0)),
+      tertiary-container: light-dark(rgb(255 221 179), rgb(122 68 0)),
+      on-tertiary-container: light-dark(rgb(51 28 0), rgb(255 221 179)),
+      surface: light-dark(rgb(239 246 239), rgb(4 12 8)),
+      surface-dim: light-dark(rgb(207 218 209), rgb(4 12 8)),
+      surface-bright: light-dark(rgb(239 246 239), rgb(43 53 46)),
+      surface-container-lowest: light-dark(rgb(250 255 250), rgb(0 8 4)),
+      surface-container-low: light-dark(rgb(233 240 233), rgb(12 21 15)),
+      surface-container: light-dark(rgb(227 234 227), rgb(16 25 19)),
+      surface-container-high: light-dark(rgb(221 228 221), rgb(26 35 29)),
+      surface-container-highest: light-dark(rgb(215 222 215), rgb(37 46 39)),
+      on-surface: light-dark(rgb(22 30 24), rgb(218 228 219)),
+      on-surface-variant: light-dark(rgb(59 74 63), rgb(184 203 188)),
+      outline: light-dark(rgb(104 121 108), rgb(130 151 134)),
+      outline-variant: light-dark(rgb(184 203 188), rgb(59 74 63)),
+      corner-extra-small: 0,
+      corner-small: 0.125rem,
+      corner-medium: 0.125rem,
+      corner-large: 0.25rem,
+      corner-full: 0.125rem,
+    )
+  );
+
+  --app-body-font: #{$ibm-plex-mono};
+  --app-display-font: #{$ibm-plex-mono};
+  --app-toolbar-background: light-dark(rgb(6 29 18), rgb(0 8 4));
+  --app-toolbar-foreground: rgb(120 255 173);
+  --app-content-background: light-dark(rgb(239 246 239), rgb(4 12 8));
+  --app-canvas-background: light-dark(rgb(227 237 228), rgb(1 10 5));
+  --app-canvas-line: light-dark(rgb(0 116 67 / 14%), rgb(93 255 158 / 15%));
+  --app-page-pattern: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    var(--app-canvas-line) 3px,
+    var(--app-canvas-line) 4px
+  );
+  --app-canvas-pattern:
+    linear-gradient(to right, var(--app-canvas-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--app-canvas-line) 1px, transparent 1px);
+  --app-widget-background: light-dark(rgb(247 253 247), rgb(5 17 10));
+  --app-widget-header-background: light-dark(rgb(224 238 226), rgb(8 28 16));
+  --app-widget-border: light-dark(rgb(0 109 63), rgb(83 226 141));
+  --app-widget-shadow-color: light-dark(rgb(0 91 53 / 16%), rgb(61 255 139 / 24%));
+  --app-widget-shadow-x: 0;
+  --app-widget-shadow-y: 0;
+  --app-widget-shadow-blur: var(--space-4);
+  --app-widget-accent-width: 2px;
+  --app-grid-line-opacity: 0.64;
+  --app-active-mark: light-dark(rgb(160 94 0), rgb(255 190 72));
+
+  --chart-1: light-dark(rgb(0 122 67), rgb(92 255 154));
+  --chart-2: light-dark(rgb(172 102 0), rgb(255 190 72));
+  --chart-3: light-dark(rgb(126 128 0), rgb(209 226 71));
+  --chart-4: light-dark(rgb(0 130 107), rgb(51 240 197));
+  --chart-5: light-dark(rgb(0 116 151), rgb(61 211 243));
+  --chart-6: light-dark(rgb(45 89 173), rgb(116 161 255));
+  --chart-7: light-dark(rgb(91 67 163), rgb(164 136 255));
+  --chart-8: light-dark(rgb(136 52 139), rgb(218 111 214));
+  --chart-9: light-dark(rgb(171 47 104), rgb(255 112 171));
+  --chart-10: light-dark(rgb(0 137 88), rgb(49 237 150));
+  --chart-11: light-dark(rgb(75 137 21), rgb(145 219 70));
+  --chart-12: light-dark(rgb(183 69 20), rgb(255 132 76));
+}
+
+html[data-app-theme='candy-pop'] {
+  @include app-theme-typography($fredoka, $fredoka);
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(rgb(190 29 117), rgb(255 135 197)),
+      on-primary: light-dark(rgb(255 255 255), rgb(103 0 57)),
+      primary-container: light-dark(rgb(255 216 232), rgb(139 0 79)),
+      on-primary-container: light-dark(rgb(62 0 31), rgb(255 216 232)),
+      secondary: light-dark(rgb(92 80 142), rgb(201 188 255)),
+      on-secondary: light-dark(rgb(255 255 255), rgb(47 35 94)),
+      secondary-container: light-dark(rgb(229 222 255), rgb(69 57 117)),
+      on-secondary-container: light-dark(rgb(35 23 81), rgb(229 222 255)),
+      tertiary: light-dark(rgb(0 111 126), rgb(82 218 237)),
+      on-tertiary: light-dark(rgb(255 255 255), rgb(0 54 63)),
+      tertiary-container: light-dark(rgb(159 239 255), rgb(0 80 91)),
+      on-tertiary-container: light-dark(rgb(0 31 37), rgb(159 239 255)),
+      surface: light-dark(rgb(255 247 250), rgb(29 20 29)),
+      surface-dim: light-dark(rgb(232 214 220), rgb(29 20 29)),
+      surface-bright: light-dark(rgb(255 247 250), rgb(79 66 77)),
+      surface-container-lowest: light-dark(rgb(255 255 255), rgb(22 14 22)),
+      surface-container-low: light-dark(rgb(255 240 246), rgb(38 28 38)),
+      surface-container: light-dark(rgb(250 234 240), rgb(43 32 43)),
+      surface-container-high: light-dark(rgb(244 228 234), rgb(54 42 53)),
+      surface-container-highest: light-dark(rgb(238 222 228), rgb(65 53 64)),
+      on-surface: light-dark(rgb(35 27 32), rgb(243 221 233)),
+      on-surface-variant: light-dark(rgb(80 66 73), rgb(218 192 206)),
+      outline: light-dark(rgb(130 111 121), rgb(163 137 151)),
+      outline-variant: light-dark(rgb(218 192 206), rgb(80 66 73)),
+      corner-extra-small: 0.25rem,
+      corner-small: 0.5rem,
+      corner-medium: 0.5rem,
+      corner-large: 0.5rem,
+      corner-full: 1rem,
+    )
+  );
+
+  --app-body-font: #{$fredoka};
+  --app-display-font: #{$fredoka};
+  --app-toolbar-background: light-dark(rgb(231 55 145), rgb(98 25 92));
+  --app-toolbar-foreground: rgb(255 247 251);
+  --app-content-background: light-dark(rgb(255 247 250), rgb(29 20 29));
+  --app-canvas-background: light-dark(rgb(255 234 244), rgb(45 29 48));
+  --app-canvas-line: light-dark(rgb(65 201 219 / 24%), rgb(255 158 211 / 18%));
+  --app-page-pattern: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent var(--space-5),
+    var(--app-canvas-line) var(--space-5),
+    var(--app-canvas-line) var(--space-6)
+  );
+  --app-canvas-pattern: repeating-linear-gradient(
+    45deg,
+    transparent 0,
+    transparent var(--space-4),
+    var(--app-canvas-line) var(--space-4),
+    var(--app-canvas-line) var(--space-5)
+  );
+  --app-widget-background: light-dark(rgb(255 255 255), rgb(50 35 51));
+  --app-widget-header-background: light-dark(rgb(255 224 239), rgb(67 41 65));
+  --app-widget-border: light-dark(rgb(132 62 109), rgb(255 157 209));
+  --app-widget-shadow-color: light-dark(rgb(82 43 133 / 32%), rgb(69 212 230 / 30%));
+  --app-widget-shadow-x: var(--space-1);
+  --app-widget-shadow-y: var(--space-2);
+  --app-widget-shadow-blur: 0;
+  --app-widget-accent-width: var(--space-1);
+  --app-grid-line-opacity: 0;
+  --app-active-mark: rgb(255 226 71);
+
+  --chart-1: light-dark(rgb(229 45 132), rgb(255 126 192));
+  --chart-2: light-dark(rgb(242 104 59), rgb(255 156 108));
+  --chart-3: light-dark(rgb(190 151 0), rgb(255 223 73));
+  --chart-4: light-dark(rgb(0 153 115), rgb(64 226 180));
+  --chart-5: light-dark(rgb(0 143 169), rgb(64 218 239));
+  --chart-6: light-dark(rgb(62 104 211), rgb(125 164 255));
+  --chart-7: light-dark(rgb(105 77 205), rgb(165 139 255));
+  --chart-8: light-dark(rgb(151 61 190), rgb(211 124 246));
+  --chart-9: light-dark(rgb(201 44 159), rgb(255 118 210));
+  --chart-10: light-dark(rgb(0 158 137), rgb(55 231 203));
+  --chart-11: light-dark(rgb(104 151 26), rgb(163 216 79));
+  --chart-12: light-dark(rgb(213 69 31), rgb(255 127 83));
+}
+
+html[data-app-theme='velvet-night'] {
+  @include app-theme-typography($manrope, $newsreader);
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(rgb(113 42 82), rgb(238 169 209)),
+      on-primary: light-dark(rgb(255 255 255), rgb(70 0 45)),
+      primary-container: light-dark(rgb(255 216 235), rgb(94 18 65)),
+      on-primary-container: light-dark(rgb(45 0 27), rgb(255 216 235)),
+      secondary: light-dark(rgb(111 84 98), rgb(220 188 204)),
+      on-secondary: light-dark(rgb(255 255 255), rgb(62 39 51)),
+      secondary-container: light-dark(rgb(250 218 234), rgb(86 61 74)),
+      on-secondary-container: light-dark(rgb(45 23 35), rgb(250 218 234)),
+      tertiary: light-dark(rgb(126 91 0), rgb(241 195 77)),
+      on-tertiary: light-dark(rgb(255 255 255), rgb(66 47 0)),
+      tertiary-container: light-dark(rgb(255 224 162), rgb(96 69 0)),
+      on-tertiary-container: light-dark(rgb(40 28 0), rgb(255 224 162)),
+      surface: light-dark(rgb(255 247 248), rgb(25 16 24)),
+      surface-dim: light-dark(rgb(230 214 219), rgb(25 16 24)),
+      surface-bright: light-dark(rgb(255 247 248), rgb(76 62 73)),
+      surface-container-lowest: light-dark(rgb(255 255 255), rgb(18 10 17)),
+      surface-container-low: light-dark(rgb(253 240 244), rgb(34 24 33)),
+      surface-container: light-dark(rgb(247 234 238), rgb(39 28 38)),
+      surface-container-high: light-dark(rgb(241 228 232), rgb(50 38 49)),
+      surface-container-highest: light-dark(rgb(235 222 226), rgb(61 49 60)),
+      on-surface: light-dark(rgb(33 27 31), rgb(238 221 231)),
+      on-surface-variant: light-dark(rgb(77 67 73), rgb(214 194 205)),
+      outline: light-dark(rgb(126 115 121), rgb(158 139 149)),
+      outline-variant: light-dark(rgb(214 194 205), rgb(77 67 73)),
+      corner-extra-small: 0.25rem,
+      corner-small: 0.375rem,
+      corner-medium: 0.5rem,
+      corner-large: 0.5rem,
+      corner-full: 1rem,
+    )
+  );
+
+  --app-body-font: #{$manrope};
+  --app-display-font: #{$newsreader};
+  --app-toolbar-background: light-dark(rgb(70 17 50), rgb(21 8 21));
+  --app-toolbar-foreground: rgb(255 235 245);
+  --app-content-background: light-dark(rgb(255 247 248), rgb(25 16 24));
+  --app-canvas-background: light-dark(rgb(244 230 236), rgb(32 17 31));
+  --app-canvas-line: light-dark(rgb(126 91 0 / 12%), rgb(241 195 77 / 13%));
+  --app-page-pattern: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent calc(var(--space-8) - 1px),
+    var(--app-canvas-line) calc(var(--space-8) - 1px),
+    var(--app-canvas-line) var(--space-8)
+  );
+  --app-canvas-pattern: none;
+  --app-widget-background: light-dark(rgb(255 252 252), rgb(39 23 38));
+  --app-widget-header-background: light-dark(rgb(250 235 242), rgb(53 28 48));
+  --app-widget-border: light-dark(rgb(157 123 140), rgb(207 159 185));
+  --app-widget-shadow-color: light-dark(rgb(74 22 52 / 20%), rgb(238 169 209 / 18%));
+  --app-widget-shadow-x: 0;
+  --app-widget-shadow-y: var(--space-2);
+  --app-widget-shadow-blur: var(--space-6);
+  --app-widget-accent-width: 1px;
+  --app-grid-line-opacity: 0;
+  --app-active-mark: rgb(231 185 69);
+
+  --chart-1: light-dark(rgb(145 30 78), rgb(245 118 166));
+  --chart-2: light-dark(rgb(171 75 21), rgb(238 145 86));
+  --chart-3: light-dark(rgb(135 108 0), rgb(231 199 73));
+  --chart-4: light-dark(rgb(31 116 78), rgb(100 194 143));
+  --chart-5: light-dark(rgb(24 107 126), rgb(91 184 202));
+  --chart-6: light-dark(rgb(56 83 145), rgb(119 147 211));
+  --chart-7: light-dark(rgb(82 63 146), rgb(148 125 210));
+  --chart-8: light-dark(rgb(119 50 130), rgb(187 111 195));
+  --chart-9: light-dark(rgb(153 40 105), rgb(224 108 171));
+  --chart-10: light-dark(rgb(21 124 104), rgb(87 207 174));
+  --chart-11: light-dark(rgb(80 119 30), rgb(145 183 87));
+  --chart-12: light-dark(rgb(159 55 25), rgb(229 121 82));
+}
+
+html[data-app-theme='vaporwave'] {
+  @include app-theme-typography($space-grotesk, $orbitron);
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(rgb(174 37 182), rgb(255 115 247)),
+      on-primary: light-dark(rgb(255 255 255), rgb(91 0 98)),
+      primary-container: light-dark(rgb(255 214 250), rgb(132 0 142)),
+      on-primary-container: light-dark(rgb(57 0 62), rgb(255 214 250)),
+      secondary: light-dark(rgb(84 76 145), rgb(197 188 255)),
+      on-secondary: light-dark(rgb(255 255 255), rgb(42 34 95)),
+      secondary-container: light-dark(rgb(227 222 255), rgb(64 56 119)),
+      on-secondary-container: light-dark(rgb(30 22 81), rgb(227 222 255)),
+      tertiary: light-dark(rgb(0 112 126), rgb(70 219 237)),
+      on-tertiary: light-dark(rgb(255 255 255), rgb(0 54 62)),
+      tertiary-container: light-dark(rgb(157 240 255), rgb(0 80 91)),
+      on-tertiary-container: light-dark(rgb(0 31 36), rgb(157 240 255)),
+      surface: light-dark(rgb(253 246 255), rgb(24 15 38)),
+      surface-dim: light-dark(rgb(226 215 230), rgb(24 15 38)),
+      surface-bright: light-dark(rgb(253 246 255), rgb(75 62 91)),
+      surface-container-lowest: light-dark(rgb(255 255 255), rgb(17 9 31)),
+      surface-container-low: light-dark(rgb(247 240 249), rgb(33 23 47)),
+      surface-container: light-dark(rgb(241 234 243), rgb(37 27 51)),
+      surface-container-high: light-dark(rgb(235 228 237), rgb(48 37 62)),
+      surface-container-highest: light-dark(rgb(229 222 231), rgb(59 48 73)),
+      on-surface: light-dark(rgb(32 28 34), rgb(237 222 244)),
+      on-surface-variant: light-dark(rgb(75 67 78), rgb(211 193 218)),
+      outline: light-dark(rgb(125 116 128), rgb(155 137 163)),
+      outline-variant: light-dark(rgb(211 193 218), rgb(75 67 78)),
+      corner-extra-small: 0.125rem,
+      corner-small: 0.25rem,
+      corner-medium: 0.375rem,
+      corner-large: 0.5rem,
+      corner-full: 0.5rem,
+    )
+  );
+
+  --app-body-font: #{$space-grotesk};
+  --app-display-font: #{$orbitron};
+  --app-toolbar-background: light-dark(rgb(111 28 153), rgb(30 12 66));
+  --app-toolbar-foreground: rgb(255 225 252);
+  --app-content-background: light-dark(rgb(250 239 255), rgb(22 12 38));
+  --app-canvas-background: light-dark(rgb(231 218 255), rgb(27 12 55));
+  --app-canvas-line: light-dark(rgb(221 40 190 / 20%), rgb(74 231 239 / 20%));
+  --app-page-pattern:
+    linear-gradient(45deg, var(--app-canvas-line) 25%, transparent 25%),
+    linear-gradient(135deg, var(--app-canvas-line) 25%, transparent 25%);
+  --app-canvas-pattern:
+    linear-gradient(to right, var(--app-canvas-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--app-canvas-line) 1px, transparent 1px);
+  --app-widget-background: light-dark(rgb(255 249 255), rgb(38 20 64));
+  --app-widget-header-background: light-dark(rgb(242 218 255), rgb(57 25 83));
+  --app-widget-border: light-dark(rgb(173 51 181), rgb(255 104 242));
+  --app-widget-shadow-color: light-dark(rgb(0 178 198 / 30%), rgb(53 228 239 / 36%));
+  --app-widget-shadow-x: var(--space-1);
+  --app-widget-shadow-y: var(--space-1);
+  --app-widget-shadow-blur: var(--space-4);
+  --app-widget-accent-width: 2px;
+  --app-grid-line-opacity: 0.7;
+  --app-active-mark: rgb(71 228 237);
+
+  --chart-1: light-dark(rgb(211 32 157), rgb(255 95 202));
+  --chart-2: light-dark(rgb(229 77 80), rgb(255 133 130));
+  --chart-3: light-dark(rgb(171 134 0), rgb(246 215 67));
+  --chart-4: light-dark(rgb(0 148 116), rgb(48 224 181));
+  --chart-5: light-dark(rgb(0 145 171), rgb(56 221 241));
+  --chart-6: light-dark(rgb(50 94 207), rgb(116 158 255));
+  --chart-7: light-dark(rgb(94 65 208), rgb(161 132 255));
+  --chart-8: light-dark(rgb(157 47 198), rgb(221 111 250));
+  --chart-9: light-dark(rgb(207 35 164), rgb(255 100 209));
+  --chart-10: light-dark(rgb(0 158 139), rgb(48 234 207));
+  --chart-11: light-dark(rgb(102 149 25), rgb(165 215 76));
+  --chart-12: light-dark(rgb(215 66 27), rgb(255 128 78));
+}
+
+.app-theme-swatch {
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 1.5rem;
+  align-items: center;
+  justify-content: center;
+  margin-inline-end: var(--space-3);
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--theme-swatch);
+  color: var(--theme-swatch-check);
+  box-shadow: inset 0 0 0 1px var(--mat-sys-surface-container-lowest);
+}
+
+.app-theme-swatch mat-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--theme-swatch-check);
+  font-size: 1rem;
+  line-height: 1rem;
+}
+
+.app-theme-swatch[data-app-theme-option='soft-ledger'] {
+  --theme-swatch: linear-gradient(135deg, rgb(47 112 82) 50%, rgb(232 163 139) 50%);
+  --theme-swatch-check: rgb(255 255 255);
+  --theme-preview-toolbar: rgb(31 73 55);
+  --theme-preview-sidebar: rgb(232 237 228);
+  --theme-preview-canvas: rgb(246 247 241);
+  --theme-preview-card: rgb(255 255 251);
+  --theme-preview-outline: rgb(159 174 162);
+  --theme-preview-ink: rgb(38 67 50);
+  --theme-preview-accent: rgb(202 105 84);
+  --theme-preview-accent-width: 2px;
+  --theme-preview-radius: 0.25rem;
+  --theme-preview-card-radius: 0.2rem;
+  --theme-preview-card-shadow: 0 2px 4px rgb(42 62 49 / 18%);
+  --theme-preview-frame-shadow: none;
+  --theme-preview-pattern: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 0.75rem,
+    rgb(72 104 86 / 10%) 0.75rem,
+    rgb(72 104 86 / 10%) calc(0.75rem + 1px)
+  );
+  --theme-preview-pattern-size: auto;
+}
+
+.app-theme-swatch[data-app-theme-option='color-coded-studio'] {
+  --theme-swatch: linear-gradient(135deg, rgb(0 126 126) 50%, rgb(225 54 103) 50%);
+  --theme-swatch-check: rgb(255 255 255);
+  --theme-preview-toolbar: rgb(0 83 85);
+  --theme-preview-sidebar: rgb(224 239 237);
+  --theme-preview-canvas: rgb(243 248 246);
+  --theme-preview-card: rgb(255 255 255);
+  --theme-preview-outline: rgb(164 190 186);
+  --theme-preview-ink: rgb(23 75 73);
+  --theme-preview-accent: rgb(225 54 103);
+  --theme-preview-accent-width: 4px;
+  --theme-preview-radius: 0.4rem;
+  --theme-preview-card-radius: 0.35rem;
+  --theme-preview-card-shadow: 0 2px 5px rgb(20 65 64 / 16%);
+  --theme-preview-frame-shadow: none;
+  --theme-preview-pattern: radial-gradient(rgb(20 95 93 / 16%) 1px, transparent 1px);
+  --theme-preview-pattern-size: 0.7rem 0.7rem;
+}
+
+.app-theme-swatch[data-app-theme-option='bright-utility'] {
+  --theme-swatch: linear-gradient(135deg, rgb(25 113 78) 50%, rgb(216 236 63) 50%);
+  --theme-swatch-check: rgb(255 255 255);
+  --theme-preview-toolbar: rgb(29 47 40);
+  --theme-preview-sidebar: rgb(230 235 226);
+  --theme-preview-canvas: rgb(243 245 239);
+  --theme-preview-card: rgb(255 255 255);
+  --theme-preview-outline: rgb(81 101 89);
+  --theme-preview-ink: rgb(24 60 43);
+  --theme-preview-accent: rgb(197 215 34);
+  --theme-preview-accent-width: 2px;
+  --theme-preview-radius: 0.15rem;
+  --theme-preview-card-radius: 0.1rem;
+  --theme-preview-card-shadow: 1px 2px 0 rgb(28 52 40 / 20%);
+  --theme-preview-frame-shadow: none;
+  --theme-preview-pattern: linear-gradient(to right, rgb(26 83 61 / 13%) 1px, transparent 1px);
+  --theme-preview-pattern-size: 0.75rem 100%;
+}
+
+.app-theme-swatch[data-app-theme-option='signal-red'] {
+  --theme-swatch: linear-gradient(135deg, rgb(209 24 42) 50%, rgb(255 210 0) 50%);
+  --theme-swatch-check: rgb(255 255 255);
+  --theme-preview-toolbar: rgb(202 16 34);
+  --theme-preview-sidebar: rgb(32 27 26);
+  --theme-preview-canvas: rgb(247 242 237);
+  --theme-preview-card: rgb(255 255 255);
+  --theme-preview-outline: rgb(35 28 27);
+  --theme-preview-ink: rgb(31 24 23);
+  --theme-preview-accent: rgb(255 205 0);
+  --theme-preview-accent-width: 4px;
+  --theme-preview-radius: 0;
+  --theme-preview-card-radius: 0;
+  --theme-preview-card-shadow: 3px 3px 0 rgb(255 205 0);
+  --theme-preview-frame-shadow: 2px 2px 0 rgb(32 27 26);
+  --theme-preview-pattern: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 0.45rem,
+    rgb(202 16 34 / 15%) 0.45rem,
+    rgb(202 16 34 / 15%) 0.65rem
+  );
+  --theme-preview-pattern-size: auto;
+}
+
+.app-theme-swatch[data-app-theme-option='midnight-terminal'] {
+  --theme-swatch: linear-gradient(135deg, rgb(1 12 6) 50%, rgb(86 240 147) 50%);
+  --theme-swatch-check: rgb(255 255 255);
+  --theme-preview-toolbar: rgb(0 7 3);
+  --theme-preview-sidebar: rgb(4 22 11);
+  --theme-preview-canvas: rgb(1 10 5);
+  --theme-preview-card: rgb(4 19 10);
+  --theme-preview-outline: rgb(70 218 130);
+  --theme-preview-ink: rgb(93 255 158);
+  --theme-preview-accent: rgb(255 190 72);
+  --theme-preview-accent-width: 2px;
+  --theme-preview-radius: 0.1rem;
+  --theme-preview-card-radius: 0.1rem;
+  --theme-preview-card-shadow: 0 0 6px rgb(61 255 139 / 45%);
+  --theme-preview-frame-shadow: 0 0 6px rgb(61 255 139 / 35%);
+  --theme-preview-pattern: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    rgb(93 255 158 / 14%) 3px,
+    rgb(93 255 158 / 14%) 4px
+  );
+  --theme-preview-pattern-size: auto;
+}
+
+.app-theme-swatch[data-app-theme-option='candy-pop'] {
+  --theme-swatch: linear-gradient(135deg, rgb(239 74 157) 50%, rgb(70 212 229) 50%);
+  --theme-swatch-check: rgb(255 255 255);
+  --theme-preview-toolbar: rgb(226 66 151);
+  --theme-preview-sidebar: rgb(223 243 247);
+  --theme-preview-canvas: rgb(255 241 249);
+  --theme-preview-card: rgb(255 255 255);
+  --theme-preview-outline: rgb(226 121 176);
+  --theme-preview-ink: rgb(115 46 86);
+  --theme-preview-accent: rgb(48 199 221);
+  --theme-preview-accent-width: 5px;
+  --theme-preview-radius: 0.75rem;
+  --theme-preview-card-radius: 0.6rem;
+  --theme-preview-card-shadow: 3px 3px 0 rgb(81 202 221 / 55%);
+  --theme-preview-frame-shadow: none;
+  --theme-preview-pattern: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 0.65rem,
+    rgb(239 74 157 / 10%) 0.65rem,
+    rgb(239 74 157 / 10%) 0.85rem
+  );
+  --theme-preview-pattern-size: auto;
+}
+
+.app-theme-swatch[data-app-theme-option='velvet-night'] {
+  --theme-swatch: linear-gradient(135deg, rgb(73 20 54) 50%, rgb(224 180 73) 50%);
+  --theme-swatch-check: rgb(255 255 255);
+  --theme-preview-toolbar: rgb(66 15 48);
+  --theme-preview-sidebar: rgb(91 31 68);
+  --theme-preview-canvas: rgb(49 17 39);
+  --theme-preview-card: rgb(76 26 58);
+  --theme-preview-outline: rgb(192 145 55);
+  --theme-preview-ink: rgb(247 226 216);
+  --theme-preview-accent: rgb(224 180 73);
+  --theme-preview-accent-width: 2px;
+  --theme-preview-radius: 0.55rem;
+  --theme-preview-card-radius: 0.4rem;
+  --theme-preview-card-shadow: 0 4px 9px rgb(0 0 0 / 38%);
+  --theme-preview-frame-shadow: 0 3px 8px rgb(47 10 33 / 30%);
+  --theme-preview-pattern: radial-gradient(rgb(224 180 73 / 13%) 1px, transparent 1px);
+  --theme-preview-pattern-size: 1rem 1rem;
+}
+
+.app-theme-swatch[data-app-theme-option='vaporwave'] {
+  --theme-swatch: linear-gradient(135deg, rgb(209 45 198) 50%, rgb(61 220 234) 50%);
+  --theme-swatch-check: rgb(255 255 255);
+  --theme-preview-toolbar: rgb(100 24 145);
+  --theme-preview-sidebar: rgb(35 18 76);
+  --theme-preview-canvas: rgb(25 12 63);
+  --theme-preview-card: rgb(62 23 104);
+  --theme-preview-outline: rgb(61 220 234);
+  --theme-preview-ink: rgb(255 217 252);
+  --theme-preview-accent: rgb(238 55 210);
+  --theme-preview-accent-width: 4px;
+  --theme-preview-radius: 0.25rem;
+  --theme-preview-card-radius: 0.15rem;
+  --theme-preview-card-shadow: 3px 3px 0 rgb(61 220 234);
+  --theme-preview-frame-shadow: 0 0 8px rgb(209 45 198 / 45%);
+  --theme-preview-pattern:
+    linear-gradient(45deg, rgb(209 45 198 / 14%) 25%, transparent 25%),
+    linear-gradient(-45deg, rgb(61 220 234 / 14%) 25%, transparent 25%);
+  --theme-preview-pattern-size: 0.8rem 0.8rem;
+}
+
+html[data-app-theme] body {
+  background-color: var(--app-content-background);
+  font-family: var(--app-body-font);
+}
+
+html[data-app-theme] .app-bar {
+  border-bottom: 1px solid var(--app-active-mark);
+  background: var(--app-toolbar-background);
+  color: var(--app-toolbar-foreground);
+
+  --mat-icon-button-icon-color: var(--app-toolbar-foreground);
+}
+
+html[data-app-theme] .app-name,
+html[data-app-theme] .page-title,
+html[data-app-theme] .widget-title {
+  font-family: var(--app-display-font);
+  letter-spacing: 0;
+}
+
+html[data-app-theme] .side-nav {
+  border-right: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+}
+
+html[data-app-theme] .budget-link.active-budget,
+html[data-app-theme] .more-budgets.active-budget {
+  box-shadow: inset var(--space-1) 0 0 var(--app-active-mark);
+}
+
+html[data-app-theme] .content {
+  background-color: var(--app-content-background);
+  background-image: var(--app-page-pattern);
+  background-size: var(--space-8) var(--space-8);
+}
+
+html[data-app-theme] .detail-header {
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+html[data-app-theme] .dashboard-grid {
+  border-color: var(--app-widget-border);
+  border-radius: var(--mat-sys-corner-medium);
+  background-color: var(--app-canvas-background);
+  background-image: var(--app-canvas-pattern);
+  background-size: var(--space-6) var(--space-6);
+  box-shadow: inset 0 0 0 1px var(--app-canvas-line);
+}
+
+html[data-app-theme] .dashboard-grid .gridster-column,
+html[data-app-theme] .dashboard-grid .gridster-row {
+  border-color: var(--app-canvas-line);
+  opacity: var(--app-grid-line-opacity);
+}
+
+html[data-app-theme] .dashboard-grid .gridster-preview {
+  border: 2px solid var(--mat-sys-primary);
+  background: var(--mat-sys-primary-container);
+  opacity: 0.72;
+}
+
+html[data-app-theme] .category-widget,
+html[data-app-theme] .breakdown-widget {
+  border: 1px solid var(--app-widget-border);
+  border-inline-start: var(--app-widget-accent-width) solid
+    var(--widget-accent, var(--mat-sys-primary));
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--app-widget-background);
+  box-shadow: var(--app-widget-shadow-x, 0) var(--app-widget-shadow-y) var(--app-widget-shadow-blur)
+    var(--app-widget-shadow-color);
+}
+
+html[data-app-theme] .widget-header {
+  border-bottom-color: var(--app-widget-border);
+  background: var(--app-widget-header-background);
+}
+
+html[data-app-theme] .legend-swatch {
+  border-radius: var(--mat-sys-corner-extra-small);
+}
+
+html[data-app-theme='soft-ledger'] .app-name,
+html[data-app-theme='soft-ledger'] .page-title,
+html[data-app-theme='soft-ledger'] .widget-title {
+  font-variation-settings: 'opsz' 32;
+  font-weight: 600;
+}
+
+html[data-app-theme='color-coded-studio'] .app-name,
+html[data-app-theme='bright-utility'] .app-name,
+html[data-app-theme='bright-utility'] .page-title {
+  font-weight: 750;
+}
+
+html[data-app-theme='color-coded-studio'] .category-widget,
+html[data-app-theme='color-coded-studio'] .breakdown-widget {
+  box-shadow:
+    0 var(--app-widget-shadow-y) var(--app-widget-shadow-blur) var(--app-widget-shadow-color),
+    inset 0 0 0 1px var(--mat-sys-surface-container-lowest);
+}
+
+html[data-app-theme='bright-utility'] .app-bar {
+  box-shadow: inset 0 calc(-1 * var(--space-1)) 0 var(--app-active-mark);
+}
+
+html[data-app-theme='bright-utility'] .widget-title,
+html[data-app-theme='bright-utility'] .expense-amount,
+html[data-app-theme='bright-utility'] .legend-name {
+  font-weight: 700;
+}
+
+html[data-app-theme='signal-red'] .app-name,
+html[data-app-theme='signal-red'] .page-title,
+html[data-app-theme='signal-red'] .widget-title {
+  font-weight: 700;
+}
+
+html[data-app-theme='signal-red'] .app-name,
+html[data-app-theme='signal-red'] .page-title {
+  text-transform: uppercase;
+}
+
+html[data-app-theme='signal-red'] .app-bar {
+  border-bottom-width: var(--space-1);
+}
+
+html[data-app-theme='signal-red'] .category-widget,
+html[data-app-theme='signal-red'] .breakdown-widget {
+  border-width: 2px;
+}
+
+html[data-app-theme='signal-red'] .dashboard-grid {
+  border-width: 2px;
+}
+
+html[data-app-theme='midnight-terminal'] .page-title {
+  color: var(--mat-sys-primary);
+}
+
+html[data-app-theme='midnight-terminal'] .app-bar {
+  border-bottom-style: dashed;
+}
+
+html[data-app-theme='midnight-terminal'] .dashboard-grid {
+  box-shadow:
+    inset 0 0 0 1px var(--app-canvas-line),
+    0 0 var(--space-5) var(--app-widget-shadow-color);
+}
+
+html[data-app-theme='midnight-terminal'] .legend-swatch {
+  box-shadow:
+    0 0 0 1px var(--mat-sys-outline-variant),
+    0 0 var(--space-2) var(--category-color);
+}
+
+html[data-app-theme='vaporwave'] .app-name,
+html[data-app-theme='vaporwave'] .page-title {
+  text-transform: uppercase;
+}
+
+html[data-app-theme='velvet-night'] .page-title,
+html[data-app-theme='velvet-night'] .widget-title {
+  font-style: italic;
+  font-variation-settings: 'opsz' 36;
+  font-weight: 600;
+}
+
+html[data-app-theme='velvet-night'] .category-widget,
+html[data-app-theme='velvet-night'] .breakdown-widget {
+  box-shadow:
+    0 var(--app-widget-shadow-y) var(--app-widget-shadow-blur) var(--app-widget-shadow-color),
+    inset 0 0 0 1px var(--app-active-mark);
+}
+
+html[data-app-theme='vaporwave'] .page-title,
+html[data-app-theme='vaporwave'] .widget-title {
+  color: var(--mat-sys-primary);
+  text-shadow: 2px 2px 0 var(--mat-sys-tertiary);
+}
+
+html[data-app-theme='vaporwave'] .category-widget,
+html[data-app-theme='vaporwave'] .breakdown-widget {
+  box-shadow:
+    var(--space-1) var(--space-1) var(--space-4) var(--app-widget-shadow-color),
+    calc(-1 * var(--space-1)) calc(-1 * var(--space-1)) var(--space-4)
+      var(--mat-sys-primary-container);
+}
+
+html[data-app-theme='candy-pop'] .app-name,
+html[data-app-theme='candy-pop'] .page-title {
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-app-theme] .category-widget,
+  html[data-app-theme] .breakdown-widget {
+    animation: app-theme-widget-enter 180ms ease-out both;
+    transition:
+      border-color 140ms ease,
+      box-shadow 140ms ease,
+      transform 140ms ease;
+  }
+
+  html[data-app-theme] .dashboard-item:hover .category-widget,
+  html[data-app-theme] .dashboard-item:hover .breakdown-widget {
+    box-shadow: var(--app-widget-shadow-x, 0) var(--space-3) var(--space-6)
+      var(--app-widget-shadow-color);
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes app-theme-widget-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

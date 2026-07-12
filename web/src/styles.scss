@@ -3,7 +3,19 @@
 // components according to the Material 3 design spec.
 // Learn more about theming and how to use it for your application's
 // custom components at https://material.angular.dev/guide/theming
+@use '@fontsource-variable/manrope';
+@use '@fontsource-variable/newsreader';
+@use '@fontsource-variable/newsreader/opsz-italic.css' as *;
+@use '@fontsource-variable/fredoka';
+@use '@fontsource-variable/space-grotesk';
+@use '@fontsource-variable/orbitron';
+@use '@fontsource/barlow-condensed/700.css' as *;
+@use '@fontsource/ibm-plex-mono/400.css' as *;
+@use '@fontsource/ibm-plex-mono/500.css' as *;
+@use '@fontsource/ibm-plex-mono/600.css' as *;
+@use '@fontsource/ibm-plex-mono/700.css' as *;
 @use '@angular/material' as mat;
+@use './styles/app-themes';
 @use './styles/tokens';
 
 html {

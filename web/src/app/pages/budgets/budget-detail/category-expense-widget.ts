@@ -7,6 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { Category } from '../../../core/budgets/category.models';
+import { categoryDisplayColor } from '../../../core/budgets/category-colors';
 import { Expense } from '../../../core/budgets/expense.models';
 import { MoneyPipe } from '../../../core/budgets/money.pipe';
 
@@ -28,6 +29,7 @@ export class CategoryExpenseWidget {
   readonly category = input.required<Category>();
   readonly expenses = input.required<Expense[]>();
   readonly currency = input.required<string>();
+  readonly categoryColor = computed(() => categoryDisplayColor(this.category()));
 
   readonly addRequested = output<number>();
   readonly editRequested = output<Expense>();

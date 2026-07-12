@@ -8,81 +8,27 @@ import { of } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { Budget } from '../budgets/budget.models';
 import { BudgetService } from '../budgets/budget.service';
-import { ThemePreference, ThemeService } from '../theme/theme.service';
 import { Shell } from './shell';
 
 describe('Shell', () => {
-  afterEach(() => TestBed.resetTestingModule());
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
 
-  it('offers System, Light, and Dark preferences and delegates the selection', async () => {
-    const preference = signal<ThemePreference>('system');
-    const effectiveColorScheme = signal<'light' | 'dark'>('light');
-    const setPreference = vi.fn((value: ThemePreference) => {
-      preference.set(value);
-      effectiveColorScheme.set(value === 'dark' ? 'dark' : 'light');
-    });
-
-    await TestBed.configureTestingModule({
-      imports: [Shell],
-      providers: [
-        provideRouter([]),
-        {
-          provide: AuthService,
-          useValue: { user: signal({ id: 1 }) },
-        },
-        {
-          provide: BudgetService,
-          useValue: { budgets: signal<Budget[]>([]).asReadonly(), load: vi.fn() },
-        },
-        {
-          provide: SocialAuthService,
-          useValue: { signOut: vi.fn() },
-        },
-        {
-          provide: BreakpointObserver,
-          useValue: { observe: () => of({ matches: false }) },
-        },
-        {
-          provide: ThemeService,
-          useValue: {
-            preference: preference.asReadonly(),
-            effectiveColorScheme: effectiveColorScheme.asReadonly(),
-            setPreference,
-          },
-        },
-      ],
-    }).compileComponents();
-    const fixture = TestBed.createComponent(Shell);
-    fixture.detectChanges();
+  it('opens one Appearance dialog from the toolbar', async () => {
+    const fixture = await createShell();
+    const openAppearance = vi
+      .spyOn(fixture.componentInstance, 'openAppearance')
+      .mockImplementation(() => undefined);
 
     const trigger = fixture.nativeElement.querySelector(
-      '[aria-label="Choose color theme"]',
+      '[aria-label="Customize appearance"]',
     ) as HTMLButtonElement | null;
     expect(trigger).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Choose color theme"]')).toBeNull();
 
     trigger?.click();
-    fixture.detectChanges();
-    await fixture.whenStable();
-
-    const menuItems = Array.from(
-      document.body.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'),
-    );
-    expect(menuItems).toHaveLength(3);
-    expect(menuItems.map((item) => item.textContent)).toEqual([
-      expect.stringContaining('System'),
-      expect.stringContaining('Light'),
-      expect.stringContaining('Dark'),
-    ]);
-    expect(menuItems.map((item) => item.getAttribute('aria-checked'))).toEqual([
-      'true',
-      'false',
-      'false',
-    ]);
-
-    menuItems[2]?.click();
-
-    expect(setPreference).toHaveBeenCalledOnce();
-    expect(setPreference).toHaveBeenCalledWith('dark');
+    expect(openAppearance).toHaveBeenCalledOnce();
   });
 
   it('shows ten budget shortcuts and puts the rest in an overflow menu', async () => {
@@ -118,14 +64,6 @@ describe('Shell', () => {
           provide: BreakpointObserver,
           useValue: { observe: () => of({ matches: false }) },
         },
-        {
-          provide: ThemeService,
-          useValue: {
-            preference: signal<ThemePreference>('system').asReadonly(),
-            effectiveColorScheme: signal<'light' | 'dark'>('light').asReadonly(),
-            setPreference: vi.fn(),
-          },
-        },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(Shell);
@@ -157,4 +95,32 @@ describe('Shell', () => {
       'Budget 12',
     ]);
   });
+
+  async function createShell() {
+    await TestBed.configureTestingModule({
+      imports: [Shell],
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: { user: signal({ id: 1 }) },
+        },
+        {
+          provide: BudgetService,
+          useValue: { budgets: signal<Budget[]>([]).asReadonly(), load: vi.fn() },
+        },
+        {
+          provide: SocialAuthService,
+          useValue: { signOut: vi.fn() },
+        },
+        {
+          provide: BreakpointObserver,
+          useValue: { observe: () => of({ matches: false }) },
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    return fixture;
+  }
 });

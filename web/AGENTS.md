@@ -38,10 +38,12 @@ Consistency comes from a single source of truth, not from vigilance. See ADR-000
 - **Typography is Material's.** Use its type scale (`var(--mat-sys-*)` font tokens, e.g.
   `font: var(--mat-sys-headline-small)`) instead of setting `font-size` by hand.
 - **Theming lives in one place.** `src/styles.scss` holds the single `mat.theme()` call;
-  app-level tokens live in `src/styles/_tokens.scss`. System / Light / Dark preference and browser
-  integration belong to `src/app/core/theme/theme.service.ts`; components continue to consume
-  Material tokens without per-theme overrides. Don't scatter per-component colour overrides;
-  adjust the theme or add a token.
+  selectable visual themes and their scoped `mat.theme-overrides()` live in
+  `src/styles/_app-themes.scss`; app-level tokens live in `src/styles/_tokens.scss`. App-theme and
+  System / Light / Dark preferences belong to the services under `src/app/core/theme/`;
+  components continue to consume Material and semantic app tokens without theme-specific
+  selectors. Don't scatter per-component colour overrides; adjust the centralized theme or add a
+  token.
 - **Class names are kebab-case** (`login-card`, not `login__card`) — stylelint's
   `selector-class-pattern`.
 - **Accessibility.** Label controls, give images meaningful `alt`, keep focus order sane.

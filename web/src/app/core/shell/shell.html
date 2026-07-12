@@ -16,11 +16,11 @@
     <button
       mat-icon-button
       type="button"
-      aria-label="Choose color theme"
-      matTooltip="Theme"
-      [matMenuTriggerFor]="themeMenu"
+      aria-label="Customize appearance"
+      matTooltip="Appearance"
+      (click)="openAppearance()"
     >
-      <mat-icon>{{ effectiveColorScheme() === 'dark' ? 'dark_mode' : 'light_mode' }}</mat-icon>
+      <mat-icon>palette</mat-icon>
     </button>
     <button mat-icon-button type="button" aria-label="Log out" (click)="logout()">
       <mat-icon>logout</mat-icon>
@@ -107,38 +107,5 @@
         <span>{{ budget.name }}</span>
       </a>
     }
-  </mat-menu>
-
-  <mat-menu #themeMenu="matMenu">
-    <button
-      mat-menu-item
-      type="button"
-      role="menuitemradio"
-      [attr.aria-checked]="themePreference() === 'system'"
-      (click)="setThemePreference('system')"
-    >
-      <mat-icon>{{ themePreference() === 'system' ? 'check' : 'devices' }}</mat-icon>
-      <span>System</span>
-    </button>
-    <button
-      mat-menu-item
-      type="button"
-      role="menuitemradio"
-      [attr.aria-checked]="themePreference() === 'light'"
-      (click)="setThemePreference('light')"
-    >
-      <mat-icon>{{ themePreference() === 'light' ? 'check' : 'light_mode' }}</mat-icon>
-      <span>Light</span>
-    </button>
-    <button
-      mat-menu-item
-      type="button"
-      role="menuitemradio"
-      [attr.aria-checked]="themePreference() === 'dark'"
-      (click)="setThemePreference('dark')"
-    >
-      <mat-icon>{{ themePreference() === 'dark' ? 'check' : 'dark_mode' }}</mat-icon>
-      <span>Dark</span>
-    </button>
   </mat-menu>
 }

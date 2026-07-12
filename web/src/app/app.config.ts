@@ -16,6 +16,7 @@ import {
 
 import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
+import { AppThemeService } from './core/theme/app-theme.service';
 import { ThemeService } from './core/theme/theme.service';
 import { environment } from '../environments/environment';
 
@@ -26,6 +27,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withFetch()),
     provideNativeDateAdapter(),
+    provideAppInitializer(() => inject(AppThemeService).initialize()),
     provideAppInitializer(() => inject(ThemeService).initialize()),
     provideAppInitializer(() => inject(AuthService).init()),
     {

@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
@@ -14,7 +15,7 @@ import { filter, map } from 'rxjs';
 
 import { AuthService } from '../auth/auth.service';
 import { BudgetService } from '../budgets/budget.service';
-import { ThemePreference, ThemeService } from '../theme/theme.service';
+import { AppearanceDialog } from '../theme/appearance-dialog';
 
 @Component({
   selector: 'app-shell',
@@ -23,6 +24,7 @@ import { ThemePreference, ThemeService } from '../theme/theme.service';
     RouterLinkActive,
     RouterOutlet,
     MatButtonModule,
+    MatDialogModule,
     MatIconModule,
     MatListModule,
     MatMenuModule,
@@ -39,14 +41,12 @@ export class Shell implements OnInit {
   private social = inject(SocialAuthService);
   private router = inject(Router);
   private breakpointObserver = inject(BreakpointObserver);
-  private theme = inject(ThemeService);
+  private dialog = inject(MatDialog);
 
   readonly user = this.auth.user;
   readonly budgets = this.budgetService.budgets;
   readonly sidebarBudgets = computed(() => this.budgets().slice(0, 10));
   readonly overflowBudgets = computed(() => this.budgets().slice(10));
-  readonly themePreference = this.theme.preference;
-  readonly effectiveColorScheme = this.theme.effectiveColorScheme;
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -76,8 +76,11 @@ export class Shell implements OnInit {
     }
   }
 
-  setThemePreference(preference: ThemePreference): void {
-    this.theme.setPreference(preference);
+  openAppearance(): void {
+    this.dialog.open(AppearanceDialog, {
+      autoFocus: false,
+      maxWidth: 'min(56rem, 96vw)',
+    });
   }
 
   async logout(): Promise<void> {

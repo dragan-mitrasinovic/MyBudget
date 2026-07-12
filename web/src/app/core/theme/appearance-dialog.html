@@ -1,0 +1,63 @@
+<h2 mat-dialog-title>Appearance</h2>
+
+<mat-dialog-content class="appearance-content">
+  <section aria-labelledby="mode-heading">
+    <h3 id="mode-heading" class="section-title">Mode</h3>
+    <mat-button-toggle-group
+      class="mode-toggle"
+      [value]="themePreference()"
+      aria-label="Color mode"
+      (change)="setThemePreference($event)"
+    >
+      <mat-button-toggle value="system">
+        <mat-icon>devices</mat-icon>
+        <span>System</span>
+      </mat-button-toggle>
+      <mat-button-toggle value="light">
+        <mat-icon>light_mode</mat-icon>
+        <span>Light</span>
+      </mat-button-toggle>
+      <mat-button-toggle value="dark">
+        <mat-icon>dark_mode</mat-icon>
+        <span>Dark</span>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </section>
+
+  <section aria-labelledby="style-heading">
+    <h3 id="style-heading" class="section-title">Style</h3>
+    <div class="style-grid" role="radiogroup" aria-label="App style">
+      @for (theme of appThemes; track theme.value) {
+        <button
+          mat-button
+          type="button"
+          class="style-option"
+          role="radio"
+          [class.selected]="appTheme() === theme.value"
+          [attr.aria-checked]="appTheme() === theme.value"
+          (click)="setAppTheme(theme.value)"
+        >
+          <span
+            class="app-theme-swatch style-preview"
+            [attr.data-app-theme-option]="theme.value"
+            aria-hidden="true"
+          >
+            <span class="preview-toolbar"></span>
+            <span class="preview-sidebar"></span>
+            <span class="preview-card preview-card-primary"></span>
+            <span class="preview-card preview-card-secondary"></span>
+            <span class="preview-accent"></span>
+            @if (appTheme() === theme.value) {
+              <span class="selected-mark"><mat-icon>check</mat-icon></span>
+            }
+          </span>
+          <span class="style-label">{{ theme.label }}</span>
+        </button>
+      }
+    </div>
+  </section>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button type="button" mat-dialog-close>Done</button>
+</mat-dialog-actions>

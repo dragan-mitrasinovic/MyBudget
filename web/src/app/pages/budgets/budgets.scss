@@ -1,3 +1,13 @@
+@use '@angular/material' as mat;
+
+.new-budget-button {
+  @include mat.button-overrides(
+    (
+      filled-container-shape: var(--mat-sys-corner-small),
+    )
+  );
+}
+
 .budgets-header {
   display: flex;
   align-items: center;
