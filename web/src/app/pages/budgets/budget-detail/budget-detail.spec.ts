@@ -141,7 +141,7 @@ describe('BudgetDetail dashboard', () => {
     expect(component.dashboardWidgets()[0]).toMatchObject({ cols: 12, rows: 10 });
   });
 
-  it('resizes from edges and shrinks adjacent widgets instead of pushing them', async () => {
+  it('resizes from edges and corners and shrinks adjacent widgets instead of pushing them', async () => {
     const { component } = await setup();
 
     expect(component.gridOptions.resizable?.handles).toEqual({
@@ -149,10 +149,10 @@ describe('BudgetDetail dashboard', () => {
       e: true,
       s: true,
       w: true,
-      ne: false,
-      nw: false,
-      se: false,
-      sw: false,
+      ne: true,
+      nw: true,
+      se: true,
+      sw: true,
     });
     expect(component.gridOptions.pushResizeItems).toBe(true);
     expect(component.gridOptions.disablePushOnResize).toBe(true);
