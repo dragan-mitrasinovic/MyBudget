@@ -13,7 +13,6 @@ describe('ExpenseFormDialog', () => {
     id: 34,
     budgetId: 12,
     name: 'Eating out',
-    isSystem: false,
     colorKey: 'chart-1',
     colorHex: null,
     createdAt: '2026-07-01T00:00:00Z',
@@ -101,7 +100,40 @@ describe('ExpenseFormDialog', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
-  async function setup(expense: Expense | null = null): Promise<{
+  it('requires an explicit category when no default is provided', async () => {
+    const { component, fixture, create } = await setup(null, null);
+    component.form.patchValue({ amount: 15.99, date: new Date(2026, 6, 11) });
+
+    await component.submit();
+    fixture.detectChanges();
+
+    expect(create).not.toHaveBeenCalled();
+    expect(component.form.controls.categoryId.hasError('required')).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Category is required');
+
+    component.form.controls.categoryId.setValue(category.id);
+    await component.submit();
+
+    expect(create).toHaveBeenCalledWith(12, expect.objectContaining({ categoryId: category.id }));
+  });
+
+  it('rejects a stale default category that is no longer available', async () => {
+    const { component, fixture, create } = await setup(null, category.id, []);
+    component.form.patchValue({ amount: 15.99, date: new Date(2026, 6, 11) });
+
+    await component.submit();
+    fixture.detectChanges();
+
+    expect(create).not.toHaveBeenCalled();
+    expect(component.form.controls.categoryId.hasError('unavailable')).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Choose an available category');
+  });
+
+  async function setup(
+    expense: Expense | null = null,
+    defaultCategoryId: number | null = category.id,
+    categories: Category[] = [category],
+  ): Promise<{
     fixture: ComponentFixture<ExpenseFormDialog>;
     component: ExpenseFormDialog;
     create: ReturnType<typeof vi.fn<(budgetId: number, input: ExpenseInput) => Promise<void>>>;
@@ -120,9 +152,9 @@ describe('ExpenseFormDialog', () => {
     const data: ExpenseDialogData = {
       budgetId: 12,
       currency: 'EUR',
-      categories: [category],
+      categories,
       expense,
-      defaultCategoryId: category.id,
+      defaultCategoryId,
     };
 
     await TestBed.configureTestingModule({

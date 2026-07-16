@@ -104,8 +104,8 @@ func TestCategoryEndpointsCreateAndMapDomainErrors(t *testing.T) {
 		t.Fatalf("decode created category: %v", err)
 	}
 
-	if created.Name != "Food" || created.IsSystem {
-		t.Errorf("created category = %#v, want custom Food category", created)
+	if created.Name != "Food" {
+		t.Errorf("created category = %#v, want Food category", created)
 	}
 
 	duplicateResponse := requestCategory(http.MethodPost, collectionPath, `{"name":"Food"}`)
@@ -113,27 +113,52 @@ func TestCategoryEndpointsCreateAndMapDomainErrors(t *testing.T) {
 		t.Errorf("duplicate status = %d, want %d", duplicateResponse.Code, http.StatusConflict)
 	}
 
-	categories, err := st.ListCategories(t.Context(), user.ID, budget.ID)
-	if err != nil {
-		t.Fatalf("list categories: %v", err)
-	}
-
-	var systemCategoryID int64
-	for _, category := range categories {
-		if category.IsSystem {
-			systemCategoryID = category.ID
-			break
-		}
-	}
-
-	updatePath := "/api/categories/" + strconv.FormatInt(systemCategoryID, 10)
-	systemResponse := requestCategory(http.MethodPatch, updatePath, `{"name":"Other"}`)
-	if systemResponse.Code != http.StatusForbidden {
-		t.Errorf("system category update status = %d, want %d", systemResponse.Code, http.StatusForbidden)
+	updatePath := "/api/categories/" + strconv.FormatInt(created.ID, 10)
+	updateResponse := requestCategory(http.MethodPatch, updatePath, `{"name":"Meals"}`)
+	if updateResponse.Code != http.StatusOK {
+		t.Errorf("category update status = %d, want %d", updateResponse.Code, http.StatusOK)
 	}
 }
 
-func TestCategoryColorEndpointUpdatesSystemCategory(t *testing.T) {
+func TestListCategoriesReturnsEmptyArrayForOwnedBudget(t *testing.T) {
+	st, handler := openHTTPTestServer(t, false)
+	user, sessionID := createHTTPTestUserSession(t, st, "category-owner")
+	_, otherSessionID := createHTTPTestUserSession(t, st, "other-user")
+	budget, err := st.CreateBudget(t.Context(), user.ID, "Household", "EUR")
+	if err != nil {
+		t.Fatalf("create budget: %v", err)
+	}
+
+	path := "/api/budgets/" + strconv.FormatInt(budget.ID, 10) + "/categories"
+	request := httptest.NewRequest(http.MethodGet, path, nil)
+	request.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionID})
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("list categories status = %d, want %d", response.Code, http.StatusOK)
+	}
+
+	var categories []store.Category
+	if err := json.NewDecoder(response.Body).Decode(&categories); err != nil {
+		t.Fatalf("decode categories: %v", err)
+	}
+
+	if categories == nil || len(categories) != 0 {
+		t.Fatalf("categories = %#v, want allocated empty array", categories)
+	}
+
+	request = httptest.NewRequest(http.MethodGet, path, nil)
+	request.AddCookie(&http.Cookie{Name: sessionCookieName, Value: otherSessionID})
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("unowned list status = %d, want %d", response.Code, http.StatusNotFound)
+	}
+}
+
+func TestDeleteCategoryEndpointRequiresAndAppliesReassignment(t *testing.T) {
 	st, handler := openHTTPTestServer(t, false)
 	user, sessionID := createHTTPTestUserSession(t, st, "category-owner")
 	budget, err := st.CreateBudget(t.Context(), user.ID, "Household", "EUR")
@@ -141,12 +166,120 @@ func TestCategoryColorEndpointUpdatesSystemCategory(t *testing.T) {
 		t.Fatalf("create budget: %v", err)
 	}
 
-	categories, err := st.ListCategories(t.Context(), user.ID, budget.ID)
+	source, err := st.CreateCategory(t.Context(), user.ID, budget.ID, "Food")
 	if err != nil {
-		t.Fatalf("list categories: %v", err)
+		t.Fatalf("create source category: %v", err)
 	}
 
-	path := "/api/categories/" + strconv.FormatInt(categories[0].ID, 10) + "/color"
+	target, err := st.CreateCategory(t.Context(), user.ID, budget.ID, "Other")
+	if err != nil {
+		t.Fatalf("create target category: %v", err)
+	}
+
+	otherBudget, err := st.CreateBudget(t.Context(), user.ID, "Travel", "EUR")
+	if err != nil {
+		t.Fatalf("create other budget: %v", err)
+	}
+
+	foreignTarget, err := st.CreateCategory(t.Context(), user.ID, otherBudget.ID, "Travel")
+	if err != nil {
+		t.Fatalf("create foreign target category: %v", err)
+	}
+
+	expense, err := st.CreateExpense(t.Context(), user.ID, budget.ID, source.ID, 1599, "Lunch", "2026-07-11")
+	if err != nil {
+		t.Fatalf("create expense: %v", err)
+	}
+
+	requestDelete := func(query string) *httptest.ResponseRecorder {
+		path := "/api/categories/" + strconv.FormatInt(source.ID, 10) + query
+		request := httptest.NewRequest(http.MethodDelete, path, nil)
+		request.Header.Set("Origin", testAppOrigin)
+		request.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionID})
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		return response
+	}
+
+	missingTargetResponse := requestDelete("")
+	if missingTargetResponse.Code != http.StatusConflict {
+		t.Fatalf("missing target status = %d, want %d", missingTargetResponse.Code, http.StatusConflict)
+	}
+
+	invalidTargetResponse := requestDelete("?reassignToCategoryId=" + strconv.FormatInt(source.ID, 10))
+	if invalidTargetResponse.Code != http.StatusBadRequest {
+		t.Fatalf("same target status = %d, want %d", invalidTargetResponse.Code, http.StatusBadRequest)
+	}
+
+	invalidQueries := []string{
+		"?reassignToCategoryId=",
+		"?reassignToCategoryId=abc",
+		"?reassignToCategoryId=0",
+		"?reassignToCategoryId=999999",
+		"?reassignToCategoryId=" + strconv.FormatInt(foreignTarget.ID, 10),
+		"?reassignToCategoryId=" + strconv.FormatInt(target.ID, 10) + "&reassignToCategoryId=" + strconv.FormatInt(target.ID, 10),
+	}
+	for _, query := range invalidQueries {
+		response := requestDelete(query)
+		if response.Code != http.StatusBadRequest {
+			t.Errorf("invalid query %q status = %d, want %d", query, response.Code, http.StatusBadRequest)
+		}
+	}
+
+	validResponse := requestDelete("?reassignToCategoryId=" + strconv.FormatInt(target.ID, 10))
+	if validResponse.Code != http.StatusNoContent {
+		t.Fatalf("valid reassignment status = %d, want %d", validResponse.Code, http.StatusNoContent)
+	}
+
+	expenses, err := st.ListExpenses(t.Context(), user.ID, budget.ID, store.ExpenseFilter{})
+	if err != nil {
+		t.Fatalf("list expenses: %v", err)
+	}
+
+	if len(expenses) != 1 || expenses[0].ID != expense.ID || expenses[0].CategoryID != target.ID {
+		t.Fatalf("reassigned expenses = %#v, want expense %d in category %d", expenses, expense.ID, target.ID)
+	}
+}
+
+func TestDeleteEmptyCategoryEndpointNeedsNoReassignment(t *testing.T) {
+	st, handler := openHTTPTestServer(t, false)
+	user, sessionID := createHTTPTestUserSession(t, st, "category-owner")
+	budget, err := st.CreateBudget(t.Context(), user.ID, "Household", "EUR")
+	if err != nil {
+		t.Fatalf("create budget: %v", err)
+	}
+
+	category, err := st.CreateCategory(t.Context(), user.ID, budget.ID, "Food")
+	if err != nil {
+		t.Fatalf("create category: %v", err)
+	}
+
+	path := "/api/categories/" + strconv.FormatInt(category.ID, 10)
+	request := httptest.NewRequest(http.MethodDelete, path, nil)
+	request.Header.Set("Origin", testAppOrigin)
+	request.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionID})
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("delete empty category status = %d, want %d", response.Code, http.StatusNoContent)
+	}
+}
+
+func TestCategoryColorEndpointUpdatesCategory(t *testing.T) {
+	st, handler := openHTTPTestServer(t, false)
+	user, sessionID := createHTTPTestUserSession(t, st, "category-owner")
+	budget, err := st.CreateBudget(t.Context(), user.ID, "Household", "EUR")
+	if err != nil {
+		t.Fatalf("create budget: %v", err)
+	}
+
+	category, err := st.CreateCategory(t.Context(), user.ID, budget.ID, "Food")
+	if err != nil {
+		t.Fatalf("create category: %v", err)
+	}
+
+	path := "/api/categories/" + strconv.FormatInt(category.ID, 10) + "/color"
 	request := httptest.NewRequest(http.MethodPut, path, bytes.NewBufferString(`{"colorKey":"chart-5","colorHex":"#abcdef"}`))
 	request.Header.Set("Origin", testAppOrigin)
 	request.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionID})

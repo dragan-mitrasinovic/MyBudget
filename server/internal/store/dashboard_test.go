@@ -33,8 +33,8 @@ func TestGetDashboardLayoutCreatesWidgetForEveryCategory(t *testing.T) {
 		t.Errorf("layout version = %d, want %d", layout.Version, DashboardLayoutVersion)
 	}
 
-	if len(layout.Widgets) != 3 {
-		t.Fatalf("widget count = %d, want 3", len(layout.Widgets))
+	if len(layout.Widgets) != 2 {
+		t.Fatalf("widget count = %d, want 2", len(layout.Widgets))
 	}
 
 	widgetCategoryIDs := map[int64]bool{}
@@ -49,6 +49,21 @@ func TestGetDashboardLayoutCreatesWidgetForEveryCategory(t *testing.T) {
 		if !widgetCategoryIDs[categoryID] {
 			t.Errorf("category %d has no widget", categoryID)
 		}
+	}
+}
+
+func TestGetDashboardLayoutReturnsEmptyLayoutForOwnedBudgetWithoutCategories(t *testing.T) {
+	st := openTestStore(t)
+	user := createStoreTestUser(t, st, "dashboard-owner")
+	budget := createStoreTestBudget(t, st, user.ID, "Household")
+
+	layout, err := st.GetDashboardLayout(context.Background(), user.ID, budget.ID)
+	if err != nil {
+		t.Fatalf("get dashboard layout: %v", err)
+	}
+
+	if layout.Version != DashboardLayoutVersion || len(layout.Widgets) != 0 {
+		t.Fatalf("empty dashboard layout = %#v, want version %d with no widgets", layout, DashboardLayoutVersion)
 	}
 }
 
@@ -82,8 +97,8 @@ func TestDashboardLayoutPersistsAndReconcilesCategoryChanges(t *testing.T) {
 		t.Fatalf("save layout: %v", err)
 	}
 
-	if len(saved.Widgets) != 2 {
-		t.Fatalf("saved widget count = %d, want 2", len(saved.Widgets))
+	if len(saved.Widgets) != 1 {
+		t.Fatalf("saved widget count = %d, want 1", len(saved.Widgets))
 	}
 
 	utilities, err := st.CreateCategory(ctx, user.ID, budget.ID, "Utilities")
@@ -91,7 +106,7 @@ func TestDashboardLayoutPersistsAndReconcilesCategoryChanges(t *testing.T) {
 		t.Fatalf("create Utilities category: %v", err)
 	}
 
-	if err := st.DeleteCategory(ctx, user.ID, food.ID); err != nil {
+	if err := st.DeleteCategory(ctx, user.ID, food.ID, nil); err != nil {
 		t.Fatalf("delete Food category: %v", err)
 	}
 
@@ -100,8 +115,8 @@ func TestDashboardLayoutPersistsAndReconcilesCategoryChanges(t *testing.T) {
 		t.Fatalf("get reconciled layout: %v", err)
 	}
 
-	if len(reconciled.Widgets) != 2 {
-		t.Fatalf("reconciled widget count = %d, want 2", len(reconciled.Widgets))
+	if len(reconciled.Widgets) != 1 {
+		t.Fatalf("reconciled widget count = %d, want 1", len(reconciled.Widgets))
 	}
 
 	for _, widget := range reconciled.Widgets {
@@ -178,6 +193,7 @@ func TestDashboardLayoutAllowsWidgetsBeyondInitialColumns(t *testing.T) {
 	user := createStoreTestUser(t, st, "dashboard-owner")
 	budget := createStoreTestBudget(t, st, user.ID, "Household")
 	ctx := context.Background()
+	createDashboardTestCategory(t, st, user.ID, budget.ID)
 
 	layout, err := st.GetDashboardLayout(ctx, user.ID, budget.ID)
 	if err != nil {
@@ -242,18 +258,15 @@ func TestGetDashboardLayoutUpgradesVersionOneGeometry(t *testing.T) {
 	budget := createStoreTestBudget(t, st, user.ID, "Household")
 	ctx := context.Background()
 
-	categories, err := st.ListCategories(ctx, user.ID, budget.ID)
-	if err != nil {
-		t.Fatalf("list categories: %v", err)
-	}
+	category := createDashboardTestCategory(t, st, user.ID, budget.ID)
 
 	legacyLayout := DashboardLayout{
 		Version: dashboardOriginalLayoutVersion,
 		Widgets: []DashboardWidget{
 			{
-				ID:         dashboardCategoryWidgetID(categories[0].ID),
+				ID:         dashboardCategoryWidgetID(category.ID),
 				Type:       DashboardWidgetTypeCategoryExpenses,
-				CategoryID: categories[0].ID,
+				CategoryID: category.ID,
 				X:          2,
 				Y:          3,
 				Columns:    4,
@@ -294,18 +307,15 @@ func TestGetDashboardLayoutUpgradesVersionTwoGeometry(t *testing.T) {
 	budget := createStoreTestBudget(t, st, user.ID, "Household")
 	ctx := context.Background()
 
-	categories, err := st.ListCategories(ctx, user.ID, budget.ID)
-	if err != nil {
-		t.Fatalf("list categories: %v", err)
-	}
+	category := createDashboardTestCategory(t, st, user.ID, budget.ID)
 
 	fineLayout := DashboardLayout{
 		Version: dashboardFineLayoutVersion,
 		Widgets: []DashboardWidget{
 			{
-				ID:         dashboardCategoryWidgetID(categories[0].ID),
+				ID:         dashboardCategoryWidgetID(category.ID),
 				Type:       DashboardWidgetTypeCategoryExpenses,
-				CategoryID: categories[0].ID,
+				CategoryID: category.ID,
 				X:          1,
 				Y:          1,
 				Columns:    25,
@@ -342,18 +352,15 @@ func TestGetDashboardLayoutUpgradesVersionThreeWithoutChangingGeometry(t *testin
 	budget := createStoreTestBudget(t, st, user.ID, "Household")
 	ctx := context.Background()
 
-	categories, err := st.ListCategories(ctx, user.ID, budget.ID)
-	if err != nil {
-		t.Fatalf("list categories: %v", err)
-	}
+	category := createDashboardTestCategory(t, st, user.ID, budget.ID)
 
 	legacyLayout := DashboardLayout{
 		Version: dashboardCategoryOnlyLayoutVersion,
 		Widgets: []DashboardWidget{
 			{
-				ID:         dashboardCategoryWidgetID(categories[0].ID),
+				ID:         dashboardCategoryWidgetID(category.ID),
 				Type:       DashboardWidgetTypeCategoryExpenses,
-				CategoryID: categories[0].ID,
+				CategoryID: category.ID,
 				X:          6,
 				Y:          7,
 				Columns:    18,
@@ -391,18 +398,15 @@ func TestGetDashboardLayoutUpgradesVersionFourWithChart(t *testing.T) {
 	budget := createStoreTestBudget(t, st, user.ID, "Household")
 	ctx := context.Background()
 
-	categories, err := st.ListCategories(ctx, user.ID, budget.ID)
-	if err != nil {
-		t.Fatalf("list categories: %v", err)
-	}
+	category := createDashboardTestCategory(t, st, user.ID, budget.ID)
 
 	legacyLayout := DashboardLayout{
 		Version: dashboardChartLayoutVersion,
 		Widgets: []DashboardWidget{
 			{
-				ID:         dashboardCategoryWidgetID(categories[0].ID),
+				ID:         dashboardCategoryWidgetID(category.ID),
 				Type:       DashboardWidgetTypeCategoryExpenses,
-				CategoryID: categories[0].ID,
+				CategoryID: category.ID,
 				Columns:    12,
 				Rows:       10,
 			},
@@ -449,18 +453,15 @@ func TestGetDashboardLayoutUpgradesVersionFiveWithExplicitVisualization(t *testi
 	budget := createStoreTestBudget(t, st, user.ID, "Household")
 	ctx := context.Background()
 
-	categories, err := st.ListCategories(ctx, user.ID, budget.ID)
-	if err != nil {
-		t.Fatalf("list categories: %v", err)
-	}
+	category := createDashboardTestCategory(t, st, user.ID, budget.ID)
 
 	legacyLayout := DashboardLayout{
 		Version: dashboardBidirectionalLayoutVersion,
 		Widgets: []DashboardWidget{
 			{
-				ID:         dashboardCategoryWidgetID(categories[0].ID),
+				ID:         dashboardCategoryWidgetID(category.ID),
 				Type:       DashboardWidgetTypeCategoryExpenses,
-				CategoryID: categories[0].ID,
+				CategoryID: category.ID,
 				Columns:    12,
 				Rows:       10,
 			},
@@ -504,6 +505,7 @@ func TestSaveDashboardLayoutValidatesOwnershipAndGeometry(t *testing.T) {
 	other := createStoreTestUser(t, st, "other-user")
 	budget := createStoreTestBudget(t, st, owner.ID, "Household")
 	ctx := context.Background()
+	createDashboardTestCategory(t, st, owner.ID, budget.ID)
 
 	if _, err := st.GetDashboardLayout(ctx, other.ID, budget.ID); !errors.Is(err, ErrNotFound) {
 		t.Errorf("other user's get error = %v, want ErrNotFound", err)
@@ -529,6 +531,7 @@ func TestSaveDashboardLayoutRejectsInvalidCategoryBreakdownWidgets(t *testing.T)
 	user := createStoreTestUser(t, st, "dashboard-owner")
 	budget := createStoreTestBudget(t, st, user.ID, "Household")
 	ctx := context.Background()
+	category := createDashboardTestCategory(t, st, user.ID, budget.ID)
 
 	layout, err := st.GetDashboardLayout(ctx, user.ID, budget.ID)
 	if err != nil {
@@ -538,7 +541,7 @@ func TestSaveDashboardLayoutRejectsInvalidCategoryBreakdownWidgets(t *testing.T)
 	invalidChart := DashboardWidget{
 		ID:         "category-breakdown:not-a-uuid",
 		Type:       DashboardWidgetTypeCategoryBreakdown,
-		CategoryID: layout.Widgets[0].CategoryID,
+		CategoryID: category.ID,
 		X:          0,
 		Y:          10,
 		Columns:    18,
@@ -556,6 +559,7 @@ func TestSaveDashboardLayoutValidatesVisualizationFields(t *testing.T) {
 	user := createStoreTestUser(t, st, "dashboard-owner")
 	budget := createStoreTestBudget(t, st, user.ID, "Household")
 	ctx := context.Background()
+	createDashboardTestCategory(t, st, user.ID, budget.ID)
 
 	layout, err := st.GetDashboardLayout(ctx, user.ID, budget.ID)
 	if err != nil {
@@ -615,4 +619,15 @@ func hasDashboardWidgetForCategory(widgets []DashboardWidget, categoryID int64) 
 	}
 
 	return false
+}
+
+func createDashboardTestCategory(t *testing.T, st *Store, userID, budgetID int64) *Category {
+	t.Helper()
+
+	category, err := st.CreateCategory(context.Background(), userID, budgetID, "Food")
+	if err != nil {
+		t.Fatalf("create dashboard test category: %v", err)
+	}
+
+	return category
 }

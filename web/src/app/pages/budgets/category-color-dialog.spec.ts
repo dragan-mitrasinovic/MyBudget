@@ -43,7 +43,6 @@ function setup(): {
     id: 34,
     budgetId: 12,
     name: 'Food',
-    isSystem: false,
     colorKey: 'chart-1',
     colorHex: null,
     createdAt: '2026-07-01T00:00:00Z',

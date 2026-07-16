@@ -58,6 +58,31 @@
   color: var(--mat-sys-error);
 }
 
+.empty-categories {
+  display: flex;
+  min-height: 18rem;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  padding: var(--space-6) 0;
+  border-block: 1px solid var(--mat-sys-outline-variant);
+}
+
+.empty-categories h2 {
+  margin: 0 0 var(--space-2);
+  font: var(--mat-sys-title-large);
+}
+
+.empty-categories p {
+  max-width: 34rem;
+  margin: 0 0 var(--space-4);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.empty-categories + .dashboard-grid {
+  margin-top: var(--space-5);
+}
+
 .dashboard-grid {
   display: block;
   height: calc(100dvh - 14rem);

@@ -48,40 +48,62 @@
         Add category
       </button>
 
-      <button mat-flat-button type="button" (click)="addExpense()">
+      <button
+        mat-flat-button
+        type="button"
+        [disabled]="categories().length === 0"
+        (click)="addExpense()"
+      >
         <mat-icon>add</mat-icon>
         Add expense
       </button>
     </div>
   </header>
 
-  <gridster class="dashboard-grid" [options]="gridOptions">
-    @for (widget of dashboardWidgets(); track widget.id) {
-      <gridster-item class="dashboard-item" [item]="widget">
-        @if (isCategoryExpensesWidget(widget)) {
-          @if (categoryById().get(widget.categoryId); as category) {
-            <app-category-expense-widget
-              [category]="category"
-              [expenses]="expensesByCategory().get(widget.categoryId) ?? []"
+  @if (categories().length === 0) {
+    <section class="empty-categories" aria-labelledby="empty-categories-title">
+      <h2 id="empty-categories-title">Create your first category</h2>
+      <p>Expenses need a category before they can be added to this budget.</p>
+      <button mat-flat-button type="button" (click)="addCategory()">
+        <mat-icon>add</mat-icon>
+        Add category
+      </button>
+    </section>
+  }
+
+  @if (dashboardWidgets().length > 0) {
+    <gridster class="dashboard-grid" [options]="gridOptions">
+      @for (widget of dashboardWidgets(); track widget.id) {
+        <gridster-item class="dashboard-item" [item]="widget">
+          @if (isCategoryExpensesWidget(widget)) {
+            @if (categoryById().get(widget.categoryId); as category) {
+              <app-category-expense-widget
+                [category]="category"
+                [expenses]="expensesByCategory().get(widget.categoryId) ?? []"
+                [currency]="b.currency"
+                (addRequested)="addExpense($event)"
+                (editRequested)="editExpense($event)"
+                (deleteRequested)="removeExpense($event)"
+                (renameCategoryRequested)="editCategory($event)"
+                (deleteCategoryRequested)="removeCategory($event)"
+              />
+            }
+          } @else if (isCategoryBreakdownWidget(widget)) {
+            <app-category-breakdown-widget
+              [spending]="categorySpending()"
               [currency]="b.currency"
-              (addRequested)="addExpense($event)"
-              (editRequested)="editExpense($event)"
-              (deleteRequested)="removeExpense($event)"
+              [visualization]="widget.visualization"
+              (colorEditRequested)="editCategoryColor($event)"
+              (visualizationChangeRequested)="
+                changeCategoryBreakdownVisualization(widget.id, $event)
+              "
+              (removeRequested)="removeDashboardWidget(widget.id)"
             />
           }
-        } @else if (isCategoryBreakdownWidget(widget)) {
-          <app-category-breakdown-widget
-            [spending]="categorySpending()"
-            [currency]="b.currency"
-            [visualization]="widget.visualization"
-            (colorEditRequested)="editCategoryColor($event)"
-            (visualizationChangeRequested)="changeCategoryBreakdownVisualization(widget.id, $event)"
-            (removeRequested)="removeDashboardWidget(widget.id)"
-          />
-        }
-      </gridster-item>
-    }
-  </gridster>
+        </gridster-item>
+      }
+    </gridster>
+  }
 
   <mat-menu #addChartMenu="matMenu">
     <button mat-menu-item type="button" (click)="addCategoryBreakdownChart('pie')">

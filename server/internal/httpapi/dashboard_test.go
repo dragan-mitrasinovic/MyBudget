@@ -38,8 +38,8 @@ func TestDashboardEndpointsLoadAndPersistLayout(t *testing.T) {
 		t.Fatalf("decode layout: %v", err)
 	}
 
-	if len(layout.Widgets) != 2 {
-		t.Fatalf("widget count = %d, want 2", len(layout.Widgets))
+	if len(layout.Widgets) != 1 {
+		t.Fatalf("widget count = %d, want 1", len(layout.Widgets))
 	}
 
 	layout.Widgets[0].Y = 6
@@ -81,12 +81,12 @@ func TestDashboardEndpointsLoadAndPersistLayout(t *testing.T) {
 		t.Errorf("persisted widget y = %d, want 6", persisted.Widgets[0].Y)
 	}
 
-	if len(persisted.Widgets) != 3 || persisted.Widgets[2].Type != store.DashboardWidgetTypeCategoryBreakdown {
+	if len(persisted.Widgets) != 2 || persisted.Widgets[1].Type != store.DashboardWidgetTypeCategoryBreakdown {
 		t.Errorf("persisted widgets = %#v, want category breakdown widget", persisted.Widgets)
 	}
 
-	if persisted.Widgets[2].Visualization != store.DashboardVisualizationDonut {
-		t.Errorf("persisted visualization = %q, want %q", persisted.Widgets[2].Visualization, store.DashboardVisualizationDonut)
+	if persisted.Widgets[1].Visualization != store.DashboardVisualizationDonut {
+		t.Errorf("persisted visualization = %q, want %q", persisted.Widgets[1].Visualization, store.DashboardVisualizationDonut)
 	}
 }
 
@@ -100,6 +100,24 @@ func TestDashboardEndpointsRejectInvalidAndUnownedLayouts(t *testing.T) {
 	}
 
 	path := "/api/budgets/" + strconv.FormatInt(budget.ID, 10) + "/dashboard"
+	getRequest := httptest.NewRequest(http.MethodGet, path, nil)
+	getRequest.AddCookie(&http.Cookie{Name: sessionCookieName, Value: ownerSessionID})
+	getResponse := httptest.NewRecorder()
+	handler.ServeHTTP(getResponse, getRequest)
+
+	if getResponse.Code != http.StatusOK {
+		t.Fatalf("empty dashboard status = %d, want %d", getResponse.Code, http.StatusOK)
+	}
+
+	var emptyLayout store.DashboardLayout
+	if err := json.NewDecoder(getResponse.Body).Decode(&emptyLayout); err != nil {
+		t.Fatalf("decode empty layout: %v", err)
+	}
+
+	if emptyLayout.Version != store.DashboardLayoutVersion || len(emptyLayout.Widgets) != 0 {
+		t.Fatalf("empty dashboard = %#v, want current version with no widgets", emptyLayout)
+	}
+
 	invalidRequest := httptest.NewRequest(
 		http.MethodPut,
 		path,

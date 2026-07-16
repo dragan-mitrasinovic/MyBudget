@@ -27,7 +27,7 @@ behavior changes.
 | `POST`        | `/api/auth/logout`             | Optional                 | Delete the current session when present and clear its cookie |
 | `GET`, `POST` | `/api/dev/login`               | Public, development only | Create a real session for the fixed Dev User                 |
 | `GET`         | `/api/budgets`                 | Required                 | List the current user's budgets                              |
-| `POST`        | `/api/budgets`                 | Required                 | Create a budget and its permanent Uncategorized category     |
+| `POST`        | `/api/budgets`                 | Required                 | Create an empty budget                                       |
 | `GET`         | `/api/budgets/{id}`            | Required                 | Get one owned budget                                         |
 | `PATCH`       | `/api/budgets/{id}`            | Required                 | Replace the editable fields of one owned budget              |
 | `DELETE`      | `/api/budgets/{id}`            | Required                 | Delete a budget, its categories, and its expenses            |
@@ -37,7 +37,7 @@ behavior changes.
 | `POST`        | `/api/budgets/{id}/categories` | Required                 | Add a category to one owned budget                           |
 | `PATCH`       | `/api/categories/{id}`         | Required                 | Rename one owned category                                    |
 | `PUT`         | `/api/categories/{id}/color`   | Required                 | Replace one owned category's chart color                     |
-| `DELETE`      | `/api/categories/{id}`         | Required                 | Delete a category after moving its expenses to Uncategorized |
+| `DELETE`      | `/api/categories/{id}`         | Required                 | Delete a category, optionally reassigning its expenses       |
 | `GET`         | `/api/budgets/{id}/expenses`   | Required                 | List and optionally filter expenses in one owned budget      |
 | `POST`        | `/api/budgets/{id}/expenses`   | Required                 | Add an expense to one owned budget                           |
 | `PATCH`       | `/api/expenses/{id}`           | Required                 | Replace the editable fields of one owned expense             |
@@ -116,16 +116,14 @@ returned.
   "id": 34,
   "budgetId": 12,
   "name": "Food",
-  "isSystem": false,
   "colorKey": "chart-1",
   "colorHex": null,
   "createdAt": "2026-07-11T08:31:00Z"
 }
 ```
 
-`isSystem=true` identifies the permanent Uncategorized category. `colorKey` selects one of the
-persisted chart palette tokens (`chart-1` through `chart-12`, or `neutral`); a non-null
-`colorHex` overrides that token with a normalized six-digit RGB hex color.
+`colorKey` selects one of the persisted chart palette tokens (`chart-1` through `chart-12`, or
+`neutral`); a non-null `colorHex` overrides that token with a normalized six-digit RGB hex color.
 
 ### Expense
 
@@ -226,24 +224,6 @@ The current `PATCH` endpoints use replacement-style request bodies, not partial 
 Clients must send every required editable field. An omitted non-pointer field assumes its Go zero
 value; for example, omitting `archived` from a budget update sets it to `false`.
 
-## Uncategorized category
-
-Every budget is created with exactly one permanent category named `Uncategorized`. Budget and
-Uncategorized creation occur in the same database transaction, so a successfully created budget
-always has the fallback category.
-
-Specific behavior:
-
-- Its category response has `isSystem: true`.
-- It cannot be renamed or deleted; either attempt returns `403 Forbidden`.
-- It can be recolored like any other category and initially uses `colorKey: "neutral"`.
-- New expenses may be assigned to it like any other category.
-- Deleting a custom category moves all of that category's expenses to the same budget's
-  Uncategorized category before deleting the category. The reassignment and deletion occur in
-  one transaction, and reassigned expenses receive a new `updatedAt` timestamp.
-- Deleting a whole budget cascades to all of its categories, including Uncategorized, and then to
-  all expenses in those categories.
-
 ## Authentication endpoints
 
 ### `POST /api/auth/google`
@@ -330,7 +310,8 @@ Errors: `401 Unauthorized`; `500 Internal Server Error` if the list cannot be lo
 
 ### `POST /api/budgets`
 
-Creates a budget and its permanent Uncategorized category in one transaction.
+Creates a budget with no initial categories. A category must be created before the budget can
+contain an expense.
 
 Request:
 
@@ -354,7 +335,7 @@ Errors:
 
 - `400 Bad Request`: malformed JSON or validation failure.
 - `401 Unauthorized`: invalid session.
-- `500 Internal Server Error`: transactional creation failed.
+- `500 Internal Server Error`: creation failed.
 
 ### `GET /api/budgets/{id}`
 
@@ -415,6 +396,10 @@ Dashboard layouts belong to one budget and therefore transitively to its owner. 
 category has exactly one `category-expenses` widget in the response. Users may also add, move,
 resize, duplicate, and remove optional `category-breakdown` widgets.
 
+A budget may have zero categories. In that state, an unsaved dashboard returns the current layout
+version with an empty `widgets` array. Optional breakdown widgets in an existing saved layout are
+preserved independently of category widgets.
+
 The server reconciles layouts with category changes on both reads and writes. Widgets for
 categories that no longer belong to the budget are discarded, while missing current categories
 receive the first available default 12-by-10 position. This makes category creation and deletion
@@ -441,7 +426,7 @@ Version 6 validation rules:
 
 Returns the saved layout reconciled with the budget's current categories. When no layout has
 been saved, returns a deterministic default layout with category widgets placed left to right,
-then top to bottom.
+then top to bottom. A budget with no categories returns `{ "version": 6, "widgets": [] }`.
 
 Success: `200 OK` with a Dashboard layout.
 
@@ -475,9 +460,9 @@ Categories belong to one budget. The owning budget must belong to the current us
 
 ### `GET /api/budgets/{id}/categories`
 
-Lists a budget's custom categories alphabetically using case-insensitive ordering, followed by
-the system Uncategorized category. The current implementation relies on the invariant that every
-valid budget has Uncategorized: an empty query result is interpreted as `404 Not Found`.
+Lists a budget's categories alphabetically using case-insensitive name ordering, then by ID. An
+owned budget may have no categories and returns `[]`; ownership is checked independently so an
+absent or unowned budget still returns `404 Not Found`.
 
 Success: `200 OK` with an array of Category objects.
 
@@ -490,7 +475,7 @@ Errors:
 
 ### `POST /api/budgets/{id}/categories`
 
-Adds a custom category to one owned budget.
+Adds a category to one owned budget.
 
 Request:
 
@@ -502,9 +487,8 @@ Request:
 
 `name` is required, trimmed, and limited to 1-100 bytes.
 
-Success: `201 Created` with the created Category (`isSystem: false`). New custom categories receive
-the first palette key not already used by a custom category in that budget, cycling through the
-12-key palette when all keys are in use.
+Success: `201 Created` with the created Category. New categories receive the first chart palette
+key not already used in that budget, cycling through the 12 chart keys when all are in use.
 
 Errors:
 
@@ -516,7 +500,7 @@ Errors:
 
 ### `PATCH /api/categories/{id}`
 
-Renames one custom category owned through the current user's budget.
+Renames one category owned through the current user's budget.
 
 Request:
 
@@ -532,15 +516,13 @@ Errors:
 
 - `400 Bad Request`: invalid category ID, malformed JSON, or invalid name.
 - `401 Unauthorized`: invalid session.
-- `403 Forbidden`: attempted to rename Uncategorized.
 - `404 Not Found`: missing category or category owned by another user.
 - `409 Conflict`: an exact category name already exists in the budget.
 - `500 Internal Server Error`: update failed.
 
 ### `PUT /api/categories/{id}/color`
 
-Replaces one category's shared chart color. This operation is also allowed for Uncategorized;
-its system protection applies only to renaming and deletion.
+Replaces one category's shared chart color.
 
 Request using the curated palette:
 
@@ -572,17 +554,26 @@ Errors:
 
 ### `DELETE /api/categories/{id}`
 
-Deletes one custom category. Before deletion, all of its expenses are reassigned to the same
-budget's Uncategorized category in the same transaction. No expenses are deleted.
+Deletes one category. An empty category needs no query parameter. A populated category requires
+`reassignToCategoryId`, naming a different category in the same budget. Reassignment refreshes
+the affected expenses' `updatedAt` timestamps and deletion occurs in the same transaction; no
+expenses are deleted.
+
+Optional query parameter:
+
+| Parameter              | Meaning                                                         |
+| ---------------------- | --------------------------------------------------------------- |
+| `reassignToCategoryId` | Move source expenses to this positive category ID before delete |
 
 Success: `204 No Content`.
 
 Errors:
 
-- `400 Bad Request`: invalid category ID.
+- `400 Bad Request`: invalid category ID; malformed, duplicate, non-positive, same-source,
+  missing, or different-budget `reassignToCategoryId`.
 - `401 Unauthorized`: invalid session.
-- `403 Forbidden`: attempted to delete Uncategorized.
 - `404 Not Found`: missing category or category owned by another user.
+- `409 Conflict`: the source category contains expenses and `reassignToCategoryId` was omitted.
 - `500 Internal Server Error`: reassignment or deletion failed.
 
 ## Expense endpoints

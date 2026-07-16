@@ -59,13 +59,18 @@ type DashboardWidget struct {
 // GetDashboardLayout returns the saved layout reconciled with the budget's current
 // categories. It returns ErrNotFound when the budget is not owned by the user.
 func (s *Store) GetDashboardLayout(ctx context.Context, userID, budgetID int64) (*DashboardLayout, error) {
-	categoryIDs, err := s.listDashboardCategoryIDs(ctx, userID, budgetID)
+	owned, err := s.isBudgetOwnedByUser(ctx, userID, budgetID)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(categoryIDs) == 0 {
+	if !owned {
 		return nil, ErrNotFound
+	}
+
+	categoryIDs, err := s.listDashboardCategoryIDs(ctx, userID, budgetID)
+	if err != nil {
+		return nil, err
 	}
 
 	layout := DashboardLayout{Version: DashboardLayoutVersion, Widgets: []DashboardWidget{}}
@@ -88,13 +93,18 @@ func (s *Store) GetDashboardLayout(ctx context.Context, userID, budgetID int64) 
 // SaveDashboardLayout validates and replaces the layout for a budget owned by the user.
 // Stale category widgets are removed and widgets for new categories are appended.
 func (s *Store) SaveDashboardLayout(ctx context.Context, userID, budgetID int64, layout DashboardLayout) (*DashboardLayout, error) {
-	categoryIDs, err := s.listDashboardCategoryIDs(ctx, userID, budgetID)
+	owned, err := s.isBudgetOwnedByUser(ctx, userID, budgetID)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(categoryIDs) == 0 {
+	if !owned {
 		return nil, ErrNotFound
+	}
+
+	categoryIDs, err := s.listDashboardCategoryIDs(ctx, userID, budgetID)
+	if err != nil {
+		return nil, err
 	}
 
 	normalized, err := reconcileAndValidateDashboardLayout(layout, categoryIDs)
@@ -135,7 +145,7 @@ func (s *Store) listDashboardCategoryIDs(ctx context.Context, userID, budgetID i
 		FROM categories c
 		JOIN budgets b ON b.id = c.budget_id
 		WHERE c.budget_id = ? AND b.user_id = ?
-		ORDER BY c.is_system ASC, c.name COLLATE NOCASE ASC`
+		ORDER BY c.name COLLATE NOCASE ASC, c.id ASC`
 
 	rows, err := s.db.QueryContext(ctx, query, budgetID, userID)
 	if err != nil {

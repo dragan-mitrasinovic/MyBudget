@@ -24,6 +24,16 @@
     >
       <mat-icon>add</mat-icon>
     </button>
+
+    <button
+      mat-icon-button
+      type="button"
+      [matMenuTriggerFor]="categoryMenu"
+      [attr.aria-label]="category().name + ' category actions'"
+      matTooltip="Category actions"
+    >
+      <mat-icon>more_vert</mat-icon>
+    </button>
   </header>
 
   <mat-card-content class="widget-content">
@@ -57,6 +67,17 @@
     }
   </mat-card-content>
 </mat-card>
+
+<mat-menu #categoryMenu="matMenu">
+  <button mat-menu-item type="button" (click)="renameCategoryRequested.emit(category())">
+    <mat-icon>edit</mat-icon>
+    <span>Rename category</span>
+  </button>
+  <button mat-menu-item type="button" (click)="deleteCategoryRequested.emit(category())">
+    <mat-icon>delete</mat-icon>
+    <span>Delete category</span>
+  </button>
+</mat-menu>
 
 <mat-menu #expenseMenu="matMenu">
   <ng-template matMenuContent let-expense>

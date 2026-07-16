@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-// uncategorizedCategoryName is the permanent, per-budget fallback category created with
-// every budget. It is flagged is_system and cannot be renamed or deleted; deleting any
-// other category reassigns its expenses here.
-const uncategorizedCategoryName = "Uncategorized"
-
 // Budget is a user-owned container for categories and expenses. UserID is internal and
 // never serialized to clients.
 type Budget struct {
@@ -23,40 +18,20 @@ type Budget struct {
 	UpdatedAt string `json:"updatedAt"`
 }
 
-// CreateBudget inserts a budget together with its permanent Uncategorized category in a
-// single transaction, so a budget never exists without the fallback category.
+// CreateBudget inserts an empty budget. Categories are added explicitly by the user.
 func (s *Store) CreateBudget(ctx context.Context, userID int64, name, currency string) (*Budget, error) {
 	now := time.Now().UTC().Format(time.RFC3339)
-
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = tx.Rollback() }()
-
-	const insertBudget = `
+	const query = `
 		INSERT INTO budgets (user_id, name, currency, archived, created_at, updated_at)
 		VALUES (?, ?, ?, 0, ?, ?)`
 
-	res, err := tx.ExecContext(ctx, insertBudget, userID, name, currency, now, now)
+	res, err := s.db.ExecContext(ctx, query, userID, name, currency, now, now)
 	if err != nil {
 		return nil, err
 	}
 
 	budgetID, err := res.LastInsertId()
 	if err != nil {
-		return nil, err
-	}
-
-	const insertCategory = `
-		INSERT INTO categories (budget_id, name, is_system, color_key, created_at)
-		VALUES (?, ?, 1, ?, ?)`
-
-	if _, err := tx.ExecContext(ctx, insertCategory, budgetID, uncategorizedCategoryName, uncategorizedColorKey, now); err != nil {
-		return nil, err
-	}
-
-	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 

@@ -73,8 +73,8 @@ export class ExpenseFormDialog {
   private changed = false;
 
   readonly form = this.fb.group({
-    categoryId: this.fb.nonNullable.control(
-      this.data.expense?.categoryId ?? this.data.defaultCategoryId ?? this.categories[0]?.id ?? 0,
+    categoryId: this.fb.control<number | null>(
+      this.data.expense?.categoryId ?? this.data.defaultCategoryId,
       [Validators.required],
     ),
     amount: this.fb.control<number | null>(
@@ -115,6 +115,12 @@ export class ExpenseFormDialog {
     }
 
     const { categoryId, amount, date, description } = this.form.getRawValue();
+    if (categoryId === null || !this.categories.some((category) => category.id === categoryId)) {
+      this.form.controls.categoryId.setErrors({ unavailable: true });
+      this.form.controls.categoryId.markAsTouched();
+      return false;
+    }
+
     const input: ExpenseInput = {
       categoryId,
       amountMinor: Math.round((amount ?? 0) * 100),

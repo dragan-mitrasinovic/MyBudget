@@ -30,6 +30,10 @@ func TestOpenAppliesMigrations(t *testing.T) {
 			t.Errorf("categories.%s column does not exist", column)
 		}
 	}
+
+	if columnExists(t, st.db, "categories", "is_system") {
+		t.Error("categories.is_system column exists")
+	}
 }
 
 func TestOpenAdoptsExistingUnversionedSchemaWithoutDataLoss(t *testing.T) {
@@ -136,11 +140,10 @@ func TestCategoryColorMigrationBackfillsExistingCategories(t *testing.T) {
 		VALUES (1, 'existing-user', 'existing@example.com', 'Existing User', '', '2026-07-11T00:00:00Z');
 		INSERT INTO budgets (id, user_id, name, currency, created_at, updated_at)
 		VALUES (1, 1, 'Household', 'EUR', '2026-07-11T00:00:00Z', '2026-07-11T00:00:00Z');
-		INSERT INTO categories (id, budget_id, name, is_system, created_at)
+		INSERT INTO categories (id, budget_id, name, created_at)
 		VALUES
-			(1, 1, 'Uncategorized', 1, '2026-07-11T00:00:00Z'),
-			(2, 1, 'Transport', 0, '2026-07-11T00:00:00Z'),
-			(3, 1, 'Food', 0, '2026-07-11T00:00:00Z');`
+			(1, 1, 'Transport', '2026-07-11T00:00:00Z'),
+			(2, 1, 'Food', '2026-07-11T00:00:00Z');`
 	if _, err := db.Exec(insert); err != nil {
 		t.Fatalf("insert existing categories: %v", err)
 	}
@@ -156,9 +159,8 @@ func TestCategoryColorMigrationBackfillsExistingCategories(t *testing.T) {
 	defer func() { _ = rows.Close() }()
 
 	wantColors := map[string]string{
-		"Uncategorized": "neutral",
-		"Food":          "chart-1",
-		"Transport":     "chart-2",
+		"Food":      "chart-1",
+		"Transport": "chart-2",
 	}
 	for rows.Next() {
 		var name, colorKey string

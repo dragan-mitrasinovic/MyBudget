@@ -4,26 +4,17 @@ import { Expense } from './expense.models';
 
 describe('aggregateCategorySpending', () => {
   it('sums all-time spending, omits zero totals, and sorts deterministically', () => {
-    const categories = [
-      category(1, 'Uncategorized', true),
-      category(2, 'Transport'),
-      category(3, 'Food'),
-      category(4, 'Unused'),
-    ];
-    const expenses = [expense(1, 2, 1200), expense(2, 3, 800), expense(3, 2, 300)];
+    const categories = [category(1, 'Transport'), category(2, 'Food'), category(3, 'Unused')];
+    const expenses = [expense(1, 1, 1200), expense(2, 2, 800), expense(3, 1, 300)];
 
     expect(aggregateCategorySpending(categories, expenses)).toEqual([
-      { category: categories[1], amountMinor: 1500 },
-      { category: categories[2], amountMinor: 800 },
+      { category: categories[0], amountMinor: 1500 },
+      { category: categories[1], amountMinor: 800 },
     ]);
   });
 
-  it('includes Uncategorized when it has spending and uses name then ID for ties', () => {
-    const categories = [
-      category(3, 'Food'),
-      category(2, 'Food'),
-      category(1, 'Uncategorized', true),
-    ];
+  it('uses name then ID for equal spending totals', () => {
+    const categories = [category(3, 'Food'), category(2, 'Food'), category(1, 'Transport')];
     const expenses = [expense(1, 1, 500), expense(2, 2, 500), expense(3, 3, 500)];
 
     expect(
@@ -32,13 +23,12 @@ describe('aggregateCategorySpending', () => {
   });
 });
 
-function category(id: number, name: string, isSystem = false): Category {
+function category(id: number, name: string): Category {
   return {
     id,
     budgetId: 12,
     name,
-    isSystem,
-    colorKey: isSystem ? 'neutral' : `chart-${id}`,
+    colorKey: `chart-${id}`,
     colorHex: null,
     createdAt: '2026-07-01T00:00:00Z',
   };

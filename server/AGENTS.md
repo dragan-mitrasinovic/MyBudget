@@ -14,9 +14,8 @@ for project-wide context. The complete current HTTP contract is documented in
   endpoint; changing a method, path, authentication rule, request field, query parameter,
   response shape, status code, validation rule, error meaning, ordering rule, or side effect.
 - Add every implemented endpoint to both the endpoint index and its detailed resource section.
-  Document current behavior only, including non-obvious invariants such as Uncategorized
-  category creation, reassignment, ownership scoping, cascading deletion, and environment-only
-  routes.
+  Document current behavior only, including non-obvious invariants such as category
+  reassignment, ownership scoping, cascading deletion, and environment-only routes.
 - Keep examples aligned with the actual JSON tags and use the exact current field casing. When
   an API change also changes an architectural decision, update `API.md` and add or supersede the
   relevant ADR.

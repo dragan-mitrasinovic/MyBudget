@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestCreateBudgetCreatesUncategorizedCategory(t *testing.T) {
+func TestCreateBudgetStartsWithoutCategories(t *testing.T) {
 	st := openTestStore(t)
 	user := createStoreTestUser(t, st, "budget-owner")
 	budget := createStoreTestBudget(t, st, user.ID, "Household")
@@ -15,13 +15,8 @@ func TestCreateBudgetCreatesUncategorizedCategory(t *testing.T) {
 		t.Fatalf("list categories: %v", err)
 	}
 
-	if len(categories) != 1 {
-		t.Fatalf("category count = %d, want 1", len(categories))
-	}
-
-	category := categories[0]
-	if category.BudgetID != budget.ID || category.Name != uncategorizedCategoryName || !category.IsSystem {
-		t.Errorf("initial category = %#v, want system Uncategorized for budget %d", category, budget.ID)
+	if len(categories) != 0 {
+		t.Fatalf("category count = %d, want 0", len(categories))
 	}
 }
 

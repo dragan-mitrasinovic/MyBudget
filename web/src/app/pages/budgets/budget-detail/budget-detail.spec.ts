@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
@@ -14,6 +15,12 @@ import { DashboardLayout, dashboardLayoutVersion } from '../../../core/budgets/d
 import { DashboardService } from '../../../core/budgets/dashboard.service';
 import { Expense } from '../../../core/budgets/expense.models';
 import { ExpenseService } from '../../../core/budgets/expense.service';
+import {
+  CategoryDeleteDialog,
+  CategoryDeleteDialogData,
+  CategoryDeleteDialogResult,
+} from '../category-delete-dialog';
+import { CategoryFormDialog } from '../category-form-dialog';
 import { BudgetDetail } from './budget-detail';
 
 describe('BudgetDetail dashboard', () => {
@@ -31,7 +38,6 @@ describe('BudgetDetail dashboard', () => {
       id: 34,
       budgetId: budget.id,
       name: 'Eating out',
-      isSystem: false,
       colorKey: 'chart-1',
       colorHex: null,
       createdAt: '2026-07-01T00:00:00Z',
@@ -40,7 +46,6 @@ describe('BudgetDetail dashboard', () => {
       id: 35,
       budgetId: budget.id,
       name: 'Groceries',
-      isSystem: false,
       colorKey: 'chart-2',
       colorHex: null,
       createdAt: '2026-07-01T00:00:00Z',
@@ -120,6 +125,63 @@ describe('BudgetDetail dashboard', () => {
     addCategoryButton!.click();
 
     await vi.waitFor(() => expect(createCategory).toHaveBeenCalledWith(budget.id, 'Utilities'));
+  });
+
+  it('guides an empty budget to its first category and disables expense creation', async () => {
+    const emptyLayout: DashboardLayout = { version: dashboardLayoutVersion, widgets: [] };
+    const { fixture } = await setup({ categories: [], expenses: [], layout: emptyLayout });
+    const root = fixture.nativeElement as HTMLElement;
+    const addExpenseButton = Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find(
+      (button) => normalizedText(button) === 'add Add expense',
+    );
+
+    expect(root.textContent).toContain('Create your first category');
+    expect(root.textContent).toContain('Expenses need a category');
+    expect(addExpenseButton?.disabled).toBe(true);
+    expect(root.querySelector('gridster')).toBeNull();
+  });
+
+  it('opens global expense entry without a preselected category', async () => {
+    const { component, dialogData } = await setup();
+
+    component.addExpense();
+
+    expect(dialogData()).toMatchObject({ defaultCategoryId: null });
+  });
+
+  it('reassigns a category expenses and refreshes expenses and layout', async () => {
+    const { component, deleteCategory, loadExpenses, getDashboard, dialogData } = await setup({
+      categoryDeleteDialogResult: { reassignToCategoryId: categories[1].id },
+    });
+
+    await component.removeCategory(categories[0]);
+
+    expect(dialogData()).toEqual({
+      category: categories[0],
+      expenseCount: 1,
+      targetCategories: [categories[1]],
+    } satisfies CategoryDeleteDialogData);
+    expect(deleteCategory).toHaveBeenCalledWith(budget.id, categories[0].id, categories[1].id);
+    expect(loadExpenses).toHaveBeenCalledTimes(2);
+    expect(getDashboard).toHaveBeenCalledTimes(2);
+  });
+
+  it('reloads dashboard data when deletion is rejected because category state changed', async () => {
+    const { component, loadCategories, loadExpenses, getDashboard, snackBarOpen } = await setup({
+      categoryDeleteDialogResult: { reassignToCategoryId: categories[1].id },
+      deleteCategoryError: new HttpErrorResponse({ status: 409 }),
+    });
+
+    await component.removeCategory(categories[0]);
+
+    expect(loadCategories).toHaveBeenCalledTimes(2);
+    expect(loadExpenses).toHaveBeenCalledTimes(2);
+    expect(getDashboard).toHaveBeenCalledTimes(2);
+    expect(snackBarOpen).toHaveBeenCalledWith(
+      'Categories changed. Review the latest expenses and try again.',
+      'Dismiss',
+      { duration: 4000 },
+    );
   });
 
   it('persists changed widget geometry after dragging stops', async () => {
@@ -232,38 +294,84 @@ describe('BudgetDetail dashboard', () => {
     );
   });
 
-  async function setup(options: { categoryDialogResult?: string } = {}): Promise<{
+  async function setup(
+    options: {
+      categoryDialogResult?: string;
+      categoryDeleteDialogResult?: CategoryDeleteDialogResult;
+      categories?: Category[];
+      expenses?: Expense[];
+      layout?: DashboardLayout;
+      deleteCategoryError?: unknown;
+    } = {},
+  ): Promise<{
     component: BudgetDetail;
     fixture: ComponentFixture<BudgetDetail>;
     dialogMessage: () => string;
+    dialogData: () => unknown;
     createCategory: ReturnType<typeof vi.fn<(budgetId: number, name: string) => Promise<void>>>;
+    deleteCategory: ReturnType<
+      typeof vi.fn<
+        (
+          budgetId: number,
+          categoryId: number,
+          reassignToCategoryId?: number | null,
+        ) => Promise<void>
+      >
+    >;
+    loadCategories: ReturnType<typeof vi.fn<(budgetId: number) => Promise<void>>>;
+    loadExpenses: ReturnType<typeof vi.fn<(budgetId: number) => Promise<void>>>;
+    getDashboard: ReturnType<typeof vi.fn<(budgetId: number) => Promise<DashboardLayout>>>;
+    snackBarOpen: ReturnType<typeof vi.fn>;
     saveDashboard: ReturnType<
       typeof vi.fn<(budgetId: number, value: DashboardLayout) => Promise<DashboardLayout>>
     >;
   }> {
-    const categorySignal = signal(categories);
-    const expenseSignal = signal(expenses);
+    const categorySignal = signal(options.categories ?? categories);
+    const expenseSignal = signal(options.expenses ?? expenses);
     const get = vi.fn<(id: number) => Promise<Budget>>();
     const loadCategories = vi.fn<(budgetId: number) => Promise<void>>();
     const loadExpenses = vi.fn<(budgetId: number) => Promise<void>>();
     const getDashboard = vi.fn<(budgetId: number) => Promise<DashboardLayout>>();
     const createCategory = vi.fn<(budgetId: number, name: string) => Promise<void>>();
+    const updateCategory =
+      vi.fn<(budgetId: number, categoryId: number, name: string) => Promise<void>>();
+    const deleteCategory =
+      vi.fn<
+        (
+          budgetId: number,
+          categoryId: number,
+          reassignToCategoryId?: number | null,
+        ) => Promise<void>
+      >();
     const saveDashboard =
       vi.fn<(budgetId: number, value: DashboardLayout) => Promise<DashboardLayout>>();
     const updateColor = vi.fn();
-    let lastDialogConfig: { data: { message: string } } | undefined;
+    const snackBarOpen = vi.fn();
+    let lastDialogConfig: { data: unknown } | undefined;
     const dialog = {
       open: (component: unknown, config: unknown) => {
-        void component;
-        lastDialogConfig = config as { data: { message: string } };
-        return { afterClosed: () => of(options.categoryDialogResult ?? false) };
+        lastDialogConfig = config as { data: unknown };
+        let result: string | CategoryDeleteDialogResult | boolean = false;
+        if (component === CategoryFormDialog) {
+          result = options.categoryDialogResult ?? false;
+        } else if (component === CategoryDeleteDialog) {
+          result = options.categoryDeleteDialogResult ?? false;
+        }
+
+        return { afterClosed: () => of(result) };
       },
     };
     get.mockResolvedValue(budget);
     loadCategories.mockResolvedValue(undefined);
     loadExpenses.mockResolvedValue(undefined);
-    getDashboard.mockResolvedValue(layout);
+    getDashboard.mockResolvedValue(options.layout ?? layout);
     createCategory.mockResolvedValue(undefined);
+    updateCategory.mockResolvedValue(undefined);
+    if (options.deleteCategoryError) {
+      deleteCategory.mockRejectedValue(options.deleteCategoryError);
+    } else {
+      deleteCategory.mockResolvedValue(undefined);
+    }
     saveDashboard.mockResolvedValue(layout);
 
     TestBed.configureTestingModule({
@@ -276,6 +384,8 @@ describe('BudgetDetail dashboard', () => {
             categories: categorySignal,
             load: loadCategories,
             create: createCategory,
+            update: updateCategory,
+            remove: deleteCategory,
             updateColor,
           },
         },
@@ -284,12 +394,17 @@ describe('BudgetDetail dashboard', () => {
           useValue: { expenses: expenseSignal, load: loadExpenses, remove: vi.fn() },
         },
         { provide: DashboardService, useValue: { get: getDashboard, save: saveDashboard } },
-        { provide: MatSnackBar, useValue: { open: vi.fn() } },
+        { provide: MatSnackBar, useValue: { open: snackBarOpen } },
         { provide: Router, useValue: { navigate: vi.fn() } },
       ],
     });
     TestBed.overrideComponent(BudgetDetail, {
-      add: { providers: [{ provide: MatDialog, useValue: dialog }] },
+      add: {
+        providers: [
+          { provide: MatDialog, useValue: dialog },
+          { provide: MatSnackBar, useValue: { open: snackBarOpen } },
+        ],
+      },
     });
     await TestBed.compileComponents();
 
@@ -302,8 +417,15 @@ describe('BudgetDetail dashboard', () => {
     return {
       component: fixture.componentInstance,
       fixture,
-      dialogMessage: () => lastDialogConfig?.data.message ?? '',
+      dialogMessage: () =>
+        (lastDialogConfig?.data as { message?: string } | undefined)?.message ?? '',
+      dialogData: () => lastDialogConfig?.data,
       createCategory,
+      deleteCategory,
+      loadCategories,
+      loadExpenses,
+      getDashboard,
+      snackBarOpen,
       saveDashboard,
     };
   }

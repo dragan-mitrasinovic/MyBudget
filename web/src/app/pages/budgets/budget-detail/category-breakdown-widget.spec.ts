@@ -114,7 +114,6 @@ function category(id: number, name: string, colorHex: string): Category {
     id,
     budgetId: 12,
     name,
-    isSystem: false,
     colorKey: `chart-${id}`,
     colorHex,
     createdAt: '2026-07-01T00:00:00Z',

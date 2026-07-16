@@ -21,32 +21,37 @@ var categoryChartColorKeys = []string{
 	"chart-12",
 }
 
-const uncategorizedColorKey = "neutral"
+const categoryNeutralColorKey = "neutral"
 
-// Category is a per-budget grouping for expenses. Every budget owns one IsSystem row
-// ("Uncategorized") that cannot be renamed or deleted.
+// Category is a user-defined per-budget grouping for expenses.
 type Category struct {
 	ID        int64   `json:"id"`
 	BudgetID  int64   `json:"budgetId"`
 	Name      string  `json:"name"`
-	IsSystem  bool    `json:"isSystem"`
 	ColorKey  string  `json:"colorKey"`
 	ColorHex  *string `json:"colorHex"`
 	CreatedAt string  `json:"createdAt"`
 }
 
-// ListCategories returns a budget's categories (user categories first, Uncategorized last)
-// scoped to the owner. An empty result means the budget does not exist or is not the
-// caller's because every real budget has at least its Uncategorized category.
+// ListCategories returns an owned budget's categories alphabetically. An owned budget may
+// have no categories; an absent or unowned budget returns ErrNotFound.
 func (s *Store) ListCategories(ctx context.Context, userID, budgetID int64) ([]Category, error) {
-	const query = `
-		SELECT c.id, c.budget_id, c.name, c.is_system, c.color_key, c.color_hex, c.created_at
-		FROM categories c
-		JOIN budgets b ON b.id = c.budget_id
-		WHERE c.budget_id = ? AND b.user_id = ?
-		ORDER BY c.is_system ASC, c.name COLLATE NOCASE ASC`
+	owned, err := s.isBudgetOwnedByUser(ctx, userID, budgetID)
+	if err != nil {
+		return nil, err
+	}
 
-	rows, err := s.db.QueryContext(ctx, query, budgetID, userID)
+	if !owned {
+		return nil, ErrNotFound
+	}
+
+	const query = `
+		SELECT id, budget_id, name, color_key, color_hex, created_at
+		FROM categories c
+		WHERE budget_id = ?
+		ORDER BY name COLLATE NOCASE ASC, id ASC`
+
+	rows, err := s.db.QueryContext(ctx, query, budgetID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +60,7 @@ func (s *Store) ListCategories(ctx context.Context, userID, budgetID int64) ([]C
 	categories := []Category{}
 	for rows.Next() {
 		var c Category
-		if err := rows.Scan(&c.ID, &c.BudgetID, &c.Name, &c.IsSystem, &c.ColorKey, &c.ColorHex, &c.CreatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.BudgetID, &c.Name, &c.ColorKey, &c.ColorHex, &c.CreatedAt); err != nil {
 			return nil, err
 		}
 
@@ -83,8 +88,8 @@ func (s *Store) CreateCategory(ctx context.Context, userID, budgetID int64, name
 	}
 
 	const query = `
-		INSERT INTO categories (budget_id, name, is_system, color_key, created_at)
-		VALUES (?, ?, 0, ?, ?)`
+		INSERT INTO categories (budget_id, name, color_key, created_at)
+		VALUES (?, ?, ?, ?)`
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	res, err := s.db.ExecContext(ctx, query, budgetID, name, colorKey, now)
@@ -105,14 +110,13 @@ func (s *Store) CreateCategory(ctx context.Context, userID, budgetID int64, name
 		ID:        id,
 		BudgetID:  budgetID,
 		Name:      name,
-		IsSystem:  false,
 		ColorKey:  colorKey,
 		CreatedAt: now,
 	}, nil
 }
 
-// UpdateCategory renames a user category the caller owns. It returns ErrNotFound,
-// ErrSystemCategory (the Uncategorized row is immutable), or ErrDuplicateName.
+// UpdateCategory renames a category the caller owns. It returns ErrNotFound or
+// ErrDuplicateName.
 func (s *Store) UpdateCategory(ctx context.Context, userID, categoryID int64, name string) (*Category, error) {
 	cat, err := s.findCategoryOwnedByUser(ctx, userID, categoryID)
 	if err != nil {
@@ -121,10 +125,6 @@ func (s *Store) UpdateCategory(ctx context.Context, userID, categoryID int64, na
 
 	if cat == nil {
 		return nil, ErrNotFound
-	}
-
-	if cat.IsSystem {
-		return nil, ErrSystemCategory
 	}
 
 	const query = `
@@ -144,8 +144,7 @@ func (s *Store) UpdateCategory(ctx context.Context, userID, categoryID int64, na
 	return cat, nil
 }
 
-// UpdateCategoryColor replaces one owned category's chart color. Unlike renaming and
-// deletion, recoloring is allowed for the system Uncategorized category.
+// UpdateCategoryColor replaces one owned category's chart color.
 func (s *Store) UpdateCategoryColor(ctx context.Context, userID, categoryID int64, colorKey string, colorHex *string) (*Category, error) {
 	cat, err := s.findCategoryOwnedByUser(ctx, userID, categoryID)
 	if err != nil {
@@ -170,9 +169,9 @@ func (s *Store) UpdateCategoryColor(ctx context.Context, userID, categoryID int6
 	return cat, nil
 }
 
-// DeleteCategory removes a user category, first moving its expenses to the budget's
-// Uncategorized category so none are lost. The system category cannot be deleted.
-func (s *Store) DeleteCategory(ctx context.Context, userID, categoryID int64) error {
+// DeleteCategory removes an owned category. A non-empty category requires another category
+// in the same budget as its reassignment target; the move and deletion are atomic.
+func (s *Store) DeleteCategory(ctx context.Context, userID, categoryID int64, reassignToCategoryID *int64) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -180,14 +179,13 @@ func (s *Store) DeleteCategory(ctx context.Context, userID, categoryID int64) er
 	defer func() { _ = tx.Rollback() }()
 
 	var budgetID int64
-	var isSystem bool
 	const lookup = `
-		SELECT c.budget_id, c.is_system
+		SELECT c.budget_id
 		FROM categories c
 		JOIN budgets b ON b.id = c.budget_id
 		WHERE c.id = ? AND b.user_id = ?`
 
-	err = tx.QueryRowContext(ctx, lookup, categoryID, userID).Scan(&budgetID, &isSystem)
+	err = tx.QueryRowContext(ctx, lookup, categoryID, userID).Scan(&budgetID)
 	if err == sql.ErrNoRows {
 		return ErrNotFound
 	}
@@ -196,31 +194,57 @@ func (s *Store) DeleteCategory(ctx context.Context, userID, categoryID int64) er
 		return err
 	}
 
-	if isSystem {
-		return ErrSystemCategory
-	}
+	if reassignToCategoryID == nil {
+		const deleteEmpty = `
+			DELETE FROM categories
+			WHERE id = ?
+			  AND NOT EXISTS (
+				SELECT 1 FROM expenses WHERE category_id = ?
+			  )`
 
-	var uncategorizedID int64
-	const findUncategorized = `
-		SELECT id FROM categories
-		WHERE budget_id = ? AND is_system = 1`
+		res, err := tx.ExecContext(ctx, deleteEmpty, categoryID, categoryID)
+		if err != nil {
+			return err
+		}
 
-	if err := tx.QueryRowContext(ctx, findUncategorized, budgetID).Scan(&uncategorizedID); err != nil {
-		return err
-	}
+		deleted, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
 
-	now := time.Now().UTC().Format(time.RFC3339)
-	const reassign = `
-		UPDATE expenses
-		SET category_id = ?, updated_at = ?
-		WHERE category_id = ?`
+		if deleted == 0 {
+			return ErrCategoryNotEmpty
+		}
+	} else {
+		targetID := *reassignToCategoryID
+		if targetID <= 0 || targetID == categoryID {
+			return ErrInvalidReassignment
+		}
 
-	if _, err := tx.ExecContext(ctx, reassign, uncategorizedID, now, categoryID); err != nil {
-		return err
-	}
+		var one int
+		const validateTarget = `SELECT 1 FROM categories WHERE id = ? AND budget_id = ?`
+		err := tx.QueryRowContext(ctx, validateTarget, targetID, budgetID).Scan(&one)
+		if err == sql.ErrNoRows {
+			return ErrInvalidReassignment
+		}
 
-	if _, err := tx.ExecContext(ctx, `DELETE FROM categories WHERE id = ?`, categoryID); err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+
+		now := time.Now().UTC().Format(time.RFC3339)
+		const reassign = `
+			UPDATE expenses
+			SET category_id = ?, updated_at = ?
+			WHERE category_id = ?`
+
+		if _, err := tx.ExecContext(ctx, reassign, targetID, now, categoryID); err != nil {
+			return err
+		}
+
+		if _, err := tx.ExecContext(ctx, `DELETE FROM categories WHERE id = ?`, categoryID); err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit()
@@ -230,14 +254,14 @@ func (s *Store) DeleteCategory(ctx context.Context, userID, categoryID int64) er
 // not exist or belongs to another user.
 func (s *Store) findCategoryOwnedByUser(ctx context.Context, userID, categoryID int64) (*Category, error) {
 	const query = `
-		SELECT c.id, c.budget_id, c.name, c.is_system, c.color_key, c.color_hex, c.created_at
+		SELECT c.id, c.budget_id, c.name, c.color_key, c.color_hex, c.created_at
 		FROM categories c
 		JOIN budgets b ON b.id = c.budget_id
 		WHERE c.id = ? AND b.user_id = ?`
 
 	var c Category
 	err := s.db.QueryRowContext(ctx, query, categoryID, userID).
-		Scan(&c.ID, &c.BudgetID, &c.Name, &c.IsSystem, &c.ColorKey, &c.ColorHex, &c.CreatedAt)
+		Scan(&c.ID, &c.BudgetID, &c.Name, &c.ColorKey, &c.ColorHex, &c.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -253,7 +277,7 @@ func (s *Store) nextCategoryColorKey(ctx context.Context, budgetID int64) (strin
 	const query = `
 		SELECT color_key
 		FROM categories
-		WHERE budget_id = ? AND is_system = 0`
+		WHERE budget_id = ?`
 
 	rows, err := s.db.QueryContext(ctx, query, budgetID)
 	if err != nil {
@@ -288,7 +312,7 @@ func (s *Store) nextCategoryColorKey(ctx context.Context, budgetID int64) (strin
 
 // IsValidCategoryColorKey reports whether a key belongs to the persisted chart palette.
 func IsValidCategoryColorKey(colorKey string) bool {
-	if colorKey == uncategorizedColorKey {
+	if colorKey == categoryNeutralColorKey {
 		return true
 	}
 

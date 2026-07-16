@@ -1,0 +1,46 @@
+<h2 mat-dialog-title>Delete category?</h2>
+
+<form [formGroup]="form" (ngSubmit)="confirm()">
+  <mat-dialog-content class="dialog-content">
+    @if (!hasExpenses) {
+      <p>
+        <strong>{{ data.category.name }}</strong> has no expenses and will be deleted.
+      </p>
+    } @else if (!hasTargets) {
+      <p>
+        <strong>{{ data.category.name }}</strong> contains {{ data.expenseCount }}
+        {{ data.expenseCount === 1 ? 'expense' : 'expenses' }}. Create another category before
+        deleting it.
+      </p>
+    } @else {
+      <p>
+        Move {{ data.expenseCount }} {{ data.expenseCount === 1 ? 'expense' : 'expenses' }} from
+        <strong>{{ data.category.name }}</strong> before deleting it.
+      </p>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Move expenses to</mat-label>
+        <mat-select formControlName="reassignToCategoryId">
+          @for (category of data.targetCategories; track category.id) {
+            <mat-option [value]="category.id">{{ category.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.reassignToCategoryId.hasError('required')) {
+          <mat-error>Choose a category</mat-error>
+        }
+      </mat-form-field>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" cdkFocusInitial (click)="cancel()">Cancel</button>
+    <button
+      mat-flat-button
+      type="submit"
+      class="delete-button"
+      [disabled]="hasExpenses && (!hasTargets || form.invalid)"
+    >
+      Delete
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -1,7 +1,7 @@
 # 0018. Dashboard charts and category colors
 
 Date: 2026-07-12
-Status: Accepted
+Status: Superseded by ADR-0023
 
 ## Context
 

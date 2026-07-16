@@ -1,7 +1,7 @@
 # 0011. Budgets, categories, and expenses data model
 
 Date: 2026-07-05
-Status: Accepted
+Status: Superseded by ADR-0023
 
 ## Context
 

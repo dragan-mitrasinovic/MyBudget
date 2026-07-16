@@ -34,6 +34,8 @@ export class CategoryExpenseWidget {
   readonly addRequested = output<number>();
   readonly editRequested = output<Expense>();
   readonly deleteRequested = output<Expense>();
+  readonly renameCategoryRequested = output<Category>();
+  readonly deleteCategoryRequested = output<Category>();
 
   readonly totalMinor = computed(() =>
     this.expenses().reduce((total, expense) => total + expense.amountMinor, 0),

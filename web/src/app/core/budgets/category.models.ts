@@ -2,7 +2,6 @@ export interface Category {
   id: number;
   budgetId: number;
   name: string;
-  isSystem: boolean;
   colorKey: string;
   colorHex: string | null;
   createdAt: string;

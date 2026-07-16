@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -10,8 +10,7 @@ export class CategoryService {
   private http = inject(HttpClient);
   private readonly api = environment.apiBase;
 
-  /** Categories of the budget currently being viewed (user categories first, then
-   * Uncategorized). Drives change detection (zoneless). */
+  /** Categories of the budget currently being viewed, sorted by name. */
   readonly categories = signal<Category[]>([]);
 
   /** Load the categories for a budget, replacing the current list. */
@@ -48,8 +47,16 @@ export class CategoryService {
     await this.load(budgetId);
   }
 
-  async remove(budgetId: number, categoryId: number): Promise<void> {
-    await firstValueFrom(this.http.delete(`${this.api}/categories/${categoryId}`));
+  async remove(
+    budgetId: number,
+    categoryId: number,
+    reassignToCategoryId: number | null = null,
+  ): Promise<void> {
+    const params =
+      reassignToCategoryId === null
+        ? undefined
+        : new HttpParams().set('reassignToCategoryId', reassignToCategoryId);
+    await firstValueFrom(this.http.delete(`${this.api}/categories/${categoryId}`, { params }));
     await this.load(budgetId);
   }
 }

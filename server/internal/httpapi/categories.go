@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/dragan-mitrasinovic/MyBudget/server/internal/store"
@@ -65,14 +66,12 @@ func (srv *Server) handleListCategories(w http.ResponseWriter, r *http.Request) 
 
 	categories, err := srv.store.ListCategories(r.Context(), user.ID, budgetID)
 	if err != nil {
-		http.Error(w, "could not list categories", http.StatusInternalServerError)
-		return
-	}
+		if errors.Is(err, store.ErrNotFound) {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
 
-	// Every real budget has at least its Uncategorized category, so an empty result
-	// means the budget does not exist or is not the caller's.
-	if len(categories) == 0 {
-		http.Error(w, "not found", http.StatusNotFound)
+		http.Error(w, "could not list categories", http.StatusInternalServerError)
 		return
 	}
 
@@ -183,7 +182,12 @@ func (srv *Server) handleDeleteCategory(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := srv.store.DeleteCategory(r.Context(), user.ID, categoryID); err != nil {
+	reassignToCategoryID, ok := parseOptionalReassignmentCategoryID(w, r)
+	if !ok {
+		return
+	}
+
+	if err := srv.store.DeleteCategory(r.Context(), user.ID, categoryID, reassignToCategoryID); err != nil {
 		writeCategoryError(w, err)
 		return
 	}
@@ -191,15 +195,37 @@ func (srv *Server) handleDeleteCategory(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func parseOptionalReassignmentCategoryID(w http.ResponseWriter, r *http.Request) (*int64, bool) {
+	values, exists := r.URL.Query()["reassignToCategoryId"]
+	if !exists {
+		return nil, true
+	}
+
+	if len(values) != 1 || values[0] == "" {
+		http.Error(w, "invalid reassignToCategoryId", http.StatusBadRequest)
+		return nil, false
+	}
+
+	categoryID, err := strconv.ParseInt(values[0], 10, 64)
+	if err != nil || categoryID <= 0 {
+		http.Error(w, "invalid reassignToCategoryId", http.StatusBadRequest)
+		return nil, false
+	}
+
+	return &categoryID, true
+}
+
 // writeCategoryError maps the category data-layer sentinel errors to HTTP responses.
 func writeCategoryError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, store.ErrNotFound):
 		http.Error(w, "not found", http.StatusNotFound)
-	case errors.Is(err, store.ErrSystemCategory):
-		http.Error(w, "the Uncategorized category cannot be modified", http.StatusForbidden)
 	case errors.Is(err, store.ErrDuplicateName):
 		http.Error(w, "a category with that name already exists", http.StatusConflict)
+	case errors.Is(err, store.ErrCategoryNotEmpty):
+		http.Error(w, "category has expenses; reassignToCategoryId is required", http.StatusConflict)
+	case errors.Is(err, store.ErrInvalidReassignment):
+		http.Error(w, "reassignment category must be different and belong to the same budget", http.StatusBadRequest)
 	default:
 		http.Error(w, "could not save category", http.StatusInternalServerError)
 	}

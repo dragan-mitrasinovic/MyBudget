@@ -36,6 +36,11 @@
           <mat-option [value]="c.id">{{ c.name }}</mat-option>
         }
       </mat-select>
+      @if (form.controls.categoryId.hasError('required')) {
+        <mat-error>Category is required</mat-error>
+      } @else if (form.controls.categoryId.hasError('unavailable')) {
+        <mat-error>Choose an available category</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">

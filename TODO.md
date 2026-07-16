@@ -14,11 +14,9 @@ _Unsorted, capture-anything. Groom later._
 
 ## In progress
 
-- [ ] Budgets feature — users create budgets and track expenses in custom categories, with a
-      per-budget currency and a permanent Uncategorized category. See
-      [ADR-0011](docs/adr/0011-budgets-categories-expenses-data-model.md).
-  - [x] Phase 1 — Budgets CRUD (auto-creates Uncategorized) + app-shell refactor (2026-07-05)
-  - [x] Phase 2 — Categories CRUD (deleting one reassigns its expenses to Uncategorized) (2026-07-09)
+- [ ] Budgets feature — users create budgets and track expenses in user-defined categories, with
+      explicit reassignment on deletion and a per-budget currency. See
+      [ADR-0023](docs/adr/0023-remove-default-uncategorized-category.md). - [x] Phase 1 — Budgets CRUD + app-shell refactor (2026-07-05) - [x] Phase 2 — Categories CRUD with expense-preserving deletion (2026-07-09)
   - [x] Phase 3 — Expenses CRUD (`spent_at` date defaulting to today, quick "save & add another") (2026-07-09) - [x] Added concise optional expense descriptions as the primary UI label (2026-07-11)
   - [x] Phase 4 — Persisted customizable desktop dashboard with movable, resizable
         category-expense widgets (2026-07-12)
@@ -30,6 +28,8 @@ _Unsorted, capture-anything. Groom later._
         all-time category breakdown (2026-07-12)
   - [x] Phase 8 — One-click budget shortcuts in the sidenav with overflow and active-route
         highlighting, plus richer budget overview cards (2026-07-12)
+  - [x] Phase 9 — Remove the default category across database, API, dashboard, and expense flows;
+        require user-selected reassignment when deleting populated categories (2026-07-16)
   - [ ] Later session — spend-over-time charts; add server-side summary aggregation when expense
         pagination or broader analytics makes client-side aggregation incomplete
 

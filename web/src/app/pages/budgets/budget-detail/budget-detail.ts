@@ -36,6 +36,11 @@ import { Expense } from '../../../core/budgets/expense.models';
 import { ExpenseService } from '../../../core/budgets/expense.service';
 import { ConfirmData, ConfirmDialog } from '../../../shared/confirm-dialog/confirm-dialog';
 import { CategoryColorDialog } from '../category-color-dialog';
+import {
+  CategoryDeleteDialog,
+  CategoryDeleteDialogData,
+  CategoryDeleteDialogResult,
+} from '../category-delete-dialog';
 import { CategoryFormDialog } from '../category-form-dialog';
 import { ExpenseDialogData, ExpenseFormDialog } from '../expense-form-dialog';
 import { CategoryBreakdownWidget } from './category-breakdown-widget';
@@ -193,18 +198,39 @@ export class BudgetDetail implements OnInit, OnDestroy {
   }
 
   async removeCategory(category: Category): Promise<void> {
-    const data: ConfirmData = {
-      title: 'Delete category?',
-      message: `Expenses in “${category.name}” will be moved to Uncategorized.`,
-      confirmText: 'Delete',
+    const data: CategoryDeleteDialogData = {
+      category,
+      expenseCount: this.expensesByCategory().get(category.id)?.length ?? 0,
+      targetCategories: this.categories().filter((candidate) => candidate.id !== category.id),
     };
-    const confirmed = await firstValueFrom(
-      this.dialog.open<ConfirmDialog, ConfirmData, boolean>(ConfirmDialog, { data }).afterClosed(),
+    const result = await firstValueFrom(
+      this.dialog
+        .open<CategoryDeleteDialog, CategoryDeleteDialogData, CategoryDeleteDialogResult>(
+          CategoryDeleteDialog,
+          { data },
+        )
+        .afterClosed(),
     );
-    if (confirmed) {
-      await this.runCategoryAction(() =>
-        this.categoryService.remove(Number(this.id()), category.id),
-      );
+    if (!result) {
+      return;
+    }
+
+    const budgetId = Number(this.id());
+    try {
+      await this.categoryService.remove(budgetId, category.id, result.reassignToCategoryId);
+      await Promise.all([this.expenseService.load(budgetId), this.loadDashboardLayout()]);
+    } catch (err) {
+      await Promise.allSettled([
+        this.categoryService.load(budgetId),
+        this.expenseService.load(budgetId),
+        this.loadDashboardLayout(),
+      ]);
+      const isStaleCategoryState =
+        err instanceof HttpErrorResponse && (err.status === 400 || err.status === 409);
+      const message = isStaleCategoryState
+        ? 'Categories changed. Review the latest expenses and try again.'
+        : 'Could not delete the category. Please try again.';
+      this.snackBar.open(message, 'Dismiss', { duration: 4000 });
     }
   }
 
@@ -222,6 +248,13 @@ export class BudgetDetail implements OnInit, OnDestroy {
   }
 
   addExpense(defaultCategoryId: number | null = null): void {
+    if (this.categories().length === 0) {
+      this.snackBar.open('Create a category before adding an expense.', 'Dismiss', {
+        duration: 4000,
+      });
+      return;
+    }
+
     this.dialog.open<ExpenseFormDialog, ExpenseDialogData, boolean>(ExpenseFormDialog, {
       data: this.expenseDialogData(null, defaultCategoryId),
     });
