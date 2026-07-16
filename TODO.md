@@ -35,6 +35,7 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Exposed category creation from the budget dashboard (2026-07-16)
 - [x] Resize dashboard widgets in both dimensions from any corner handle (2026-07-16)
 - [x] Eight persistent app styles spanning editorial, playful, technical, industrial, luxury, and
       neon identities, with independent System / Light / Dark mode in one visual Appearance dialog

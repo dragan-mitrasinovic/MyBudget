@@ -109,6 +109,19 @@ describe('BudgetDetail dashboard', () => {
     expect(dialogMessage()).toBe('This expense will be permanently deleted.');
   });
 
+  it('adds a category from the budget header', async () => {
+    const { fixture, createCategory } = await setup({ categoryDialogResult: 'Utilities' });
+    const root = fixture.nativeElement as HTMLElement;
+    const addCategoryButton = Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find(
+      (button) => normalizedText(button).includes('Add category'),
+    );
+
+    expect(addCategoryButton).toBeDefined();
+    addCategoryButton!.click();
+
+    await vi.waitFor(() => expect(createCategory).toHaveBeenCalledWith(budget.id, 'Utilities'));
+  });
+
   it('persists changed widget geometry after dragging stops', async () => {
     const { component, saveDashboard } = await setup();
     vi.useFakeTimers();
@@ -219,10 +232,11 @@ describe('BudgetDetail dashboard', () => {
     );
   });
 
-  async function setup(): Promise<{
+  async function setup(options: { categoryDialogResult?: string } = {}): Promise<{
     component: BudgetDetail;
     fixture: ComponentFixture<BudgetDetail>;
     dialogMessage: () => string;
+    createCategory: ReturnType<typeof vi.fn<(budgetId: number, name: string) => Promise<void>>>;
     saveDashboard: ReturnType<
       typeof vi.fn<(budgetId: number, value: DashboardLayout) => Promise<DashboardLayout>>
     >;
@@ -233,6 +247,7 @@ describe('BudgetDetail dashboard', () => {
     const loadCategories = vi.fn<(budgetId: number) => Promise<void>>();
     const loadExpenses = vi.fn<(budgetId: number) => Promise<void>>();
     const getDashboard = vi.fn<(budgetId: number) => Promise<DashboardLayout>>();
+    const createCategory = vi.fn<(budgetId: number, name: string) => Promise<void>>();
     const saveDashboard =
       vi.fn<(budgetId: number, value: DashboardLayout) => Promise<DashboardLayout>>();
     const updateColor = vi.fn();
@@ -241,13 +256,14 @@ describe('BudgetDetail dashboard', () => {
       open: (component: unknown, config: unknown) => {
         void component;
         lastDialogConfig = config as { data: { message: string } };
-        return { afterClosed: () => of(false) };
+        return { afterClosed: () => of(options.categoryDialogResult ?? false) };
       },
     };
     get.mockResolvedValue(budget);
     loadCategories.mockResolvedValue(undefined);
     loadExpenses.mockResolvedValue(undefined);
     getDashboard.mockResolvedValue(layout);
+    createCategory.mockResolvedValue(undefined);
     saveDashboard.mockResolvedValue(layout);
 
     TestBed.configureTestingModule({
@@ -256,7 +272,12 @@ describe('BudgetDetail dashboard', () => {
         { provide: BudgetService, useValue: { get } },
         {
           provide: CategoryService,
-          useValue: { categories: categorySignal, load: loadCategories, updateColor },
+          useValue: {
+            categories: categorySignal,
+            load: loadCategories,
+            create: createCategory,
+            updateColor,
+          },
         },
         {
           provide: ExpenseService,
@@ -282,6 +303,7 @@ describe('BudgetDetail dashboard', () => {
       component: fixture.componentInstance,
       fixture,
       dialogMessage: () => lastDialogConfig?.data.message ?? '',
+      createCategory,
       saveDashboard,
     };
   }
