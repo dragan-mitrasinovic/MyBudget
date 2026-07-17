@@ -24,6 +24,7 @@ import { CategoryService } from '../../../core/budgets/category.service';
 import { aggregateCategorySpending } from '../../../core/budgets/category-spending';
 import {
   CategoryBreakdownVisualization,
+  CategoryExpenseDisplay,
   DashboardLayout,
   DashboardWidget,
   createCategoryBreakdownWidget,
@@ -95,6 +96,10 @@ export class BudgetDetail implements OnInit, OnDestroy {
       const categoryExpenses = grouped.get(expense.categoryId) ?? [];
       categoryExpenses.push(expense);
       grouped.set(expense.categoryId, categoryExpenses);
+    }
+
+    for (const categoryExpenses of grouped.values()) {
+      categoryExpenses.reverse();
     }
 
     return grouped;
@@ -317,6 +322,17 @@ export class BudgetDetail implements OnInit, OnDestroy {
     this.scheduleDashboardSave();
   }
 
+  changeCategoryExpenseDisplay(widgetID: string, expenseDisplay: CategoryExpenseDisplay): void {
+    this.dashboardWidgets.update((widgets) =>
+      widgets.map((widget) =>
+        isCategoryExpensesWidget(widget) && widget.id === widgetID
+          ? { ...widget, expenseDisplay }
+          : widget,
+      ),
+    );
+    this.scheduleDashboardSave();
+  }
+
   removeDashboardWidget(widgetID: string): void {
     this.dashboardWidgets.update((widgets) => widgets.filter((widget) => widget.id !== widgetID));
     this.scheduleDashboardSave();
@@ -425,7 +441,12 @@ export class BudgetDetail implements OnInit, OnDestroy {
         };
 
         return isCategoryExpensesWidget(widget)
-          ? { ...geometry, type: widget.type, categoryId: widget.categoryId }
+          ? {
+              ...geometry,
+              type: widget.type,
+              categoryId: widget.categoryId,
+              expenseDisplay: widget.expenseDisplay,
+            }
           : { ...geometry, type: widget.type, visualization: widget.visualization };
       }),
     };

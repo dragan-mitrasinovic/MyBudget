@@ -81,10 +81,13 @@
                 [category]="category"
                 [expenses]="expensesByCategory().get(widget.categoryId) ?? []"
                 [currency]="b.currency"
+                [expenseDisplay]="widget.expenseDisplay"
                 (addRequested)="addExpense($event)"
                 (editRequested)="editExpense($event)"
                 (deleteRequested)="removeExpense($event)"
                 (renameCategoryRequested)="editCategory($event)"
+                (colorEditRequested)="editCategoryColor($event)"
+                (expenseDisplayChangeRequested)="changeCategoryExpenseDisplay(widget.id, $event)"
                 (deleteCategoryRequested)="removeCategory($event)"
               />
             }

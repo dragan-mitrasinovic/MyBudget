@@ -1,8 +1,15 @@
-export const dashboardLayoutVersion = 6;
+export const dashboardLayoutVersion = 8;
 export const categoryExpensesWidgetType = 'category-expenses';
 export const categoryBreakdownWidgetType = 'category-breakdown';
+export const categoryExpenseDisplays = [
+  'number-only',
+  'amount-only',
+  'title-amount',
+  'title-amount-date',
+] as const;
 export const categoryBreakdownVisualizations = ['pie', 'donut', 'bar', 'treemap'] as const;
 
+export type CategoryExpenseDisplay = (typeof categoryExpenseDisplays)[number];
 export type CategoryBreakdownVisualization = (typeof categoryBreakdownVisualizations)[number];
 
 interface DashboardWidgetGeometry {
@@ -16,6 +23,7 @@ interface DashboardWidgetGeometry {
 export interface CategoryExpensesDashboardWidget extends DashboardWidgetGeometry {
   type: typeof categoryExpensesWidgetType;
   categoryId: number;
+  expenseDisplay: CategoryExpenseDisplay;
 }
 
 export interface CategoryBreakdownDashboardWidget extends DashboardWidgetGeometry {

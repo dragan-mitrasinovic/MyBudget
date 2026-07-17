@@ -79,6 +79,7 @@ describe('BudgetDetail dashboard', () => {
       id: `category-expenses:${category.id}`,
       type: 'category-expenses',
       categoryId: category.id,
+      expenseDisplay: 'title-amount',
       x: index * 12,
       y: 0,
       cols: 12,
@@ -91,17 +92,39 @@ describe('BudgetDetail dashboard', () => {
     TestBed.resetTestingModule();
   });
 
-  it('uses description as the primary label and category as the blank fallback', async () => {
+  it('uses description as the primary label and category as the blank fallback by default', async () => {
     const { fixture } = await setup();
     const root = fixture.nativeElement as HTMLElement;
     const titles = Array.from(root.querySelectorAll<HTMLElement>('.expense-title'), normalizedText);
     const details = Array.from(root.querySelectorAll<HTMLElement>('.expense-sub'), normalizedText);
 
     expect(titles).toEqual(['Burgers', 'Groceries']);
-    expect(details).toEqual([formatDate('2026-07-11'), formatDate('2026-07-10')]);
+    expect(details).toEqual([]);
     expect(Array.from(root.querySelectorAll<HTMLElement>('.widget-title'), normalizedText)).toEqual(
       ['Eating out', 'Groceries'],
     );
+  });
+
+  it('places each category newest expense at the bottom', async () => {
+    const newest: Expense = {
+      ...expenses[0],
+      id: 58,
+      description: 'Dinner',
+      spentAt: '2026-07-12',
+    };
+    const oldest: Expense = {
+      ...expenses[0],
+      id: 55,
+      description: 'Breakfast',
+      spentAt: '2026-07-10',
+    };
+    const { fixture } = await setup({ expenses: [newest, oldest] });
+    const titles = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.expense-title'),
+      normalizedText,
+    );
+
+    expect(titles).toEqual(['Breakfast', 'Dinner']);
   });
 
   it('identifies described expenses in delete confirmation copy', async () => {
@@ -294,6 +317,22 @@ describe('BudgetDetail dashboard', () => {
     );
   });
 
+  it('changes category expense display without changing its identity or geometry', async () => {
+    const { component, saveDashboard } = await setup();
+    vi.useFakeTimers();
+    const widget = component.dashboardWidgets()[0];
+
+    component.changeCategoryExpenseDisplay(widget.id, 'number-only');
+    await vi.advanceTimersByTimeAsync(300);
+
+    const changed = component.dashboardWidgets()[0];
+    expect(changed).toEqual({ ...widget, expenseDisplay: 'number-only' });
+    expect(saveDashboard).toHaveBeenLastCalledWith(
+      budget.id,
+      expect.objectContaining({ widgets: expect.arrayContaining([changed]) }),
+    );
+  });
+
   async function setup(
     options: {
       categoryDialogResult?: string;
@@ -432,14 +471,5 @@ describe('BudgetDetail dashboard', () => {
 
   function normalizedText(element: HTMLElement): string {
     return element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-  }
-
-  function formatDate(iso: string): string {
-    const [year, month, day] = iso.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
   }
 });

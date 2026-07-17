@@ -11,27 +11,33 @@ import (
 )
 
 const (
-	DashboardLayoutVersion               = 6
-	DashboardWidgetTypeCategoryExpenses  = "category-expenses"
-	DashboardWidgetTypeCategoryBreakdown = "category-breakdown"
-	DashboardVisualizationPie            = "pie"
-	DashboardVisualizationDonut          = "donut"
-	DashboardVisualizationBar            = "bar"
-	DashboardVisualizationTreemap        = "treemap"
-	dashboardOriginalLayoutVersion       = 1
-	dashboardFineLayoutVersion           = 2
-	dashboardCategoryOnlyLayoutVersion   = 3
-	dashboardChartLayoutVersion          = 4
-	dashboardBidirectionalLayoutVersion  = 5
-	dashboardInitialGridColumns          = 36
-	dashboardMaximumGridColumns          = 20000
-	dashboardDefaultWidgetColumns        = 12
-	dashboardDefaultWidgetRows           = 10
-	dashboardMinimumWidgetColumns        = 9
-	dashboardMaximumWidgetColumns        = 36
-	dashboardMinimumWidgetRows           = 6
-	dashboardMaximumWidgetRows           = 24
-	dashboardMaximumGridRows             = 20000
+	DashboardLayoutVersion                 = 8
+	DashboardWidgetTypeCategoryExpenses    = "category-expenses"
+	DashboardWidgetTypeCategoryBreakdown   = "category-breakdown"
+	DashboardExpenseDisplayNumberOnly      = "number-only"
+	DashboardExpenseDisplayAmountOnly      = "amount-only"
+	DashboardExpenseDisplayTitleAmount     = "title-amount"
+	DashboardExpenseDisplayTitleAmountDate = "title-amount-date"
+	DashboardVisualizationPie              = "pie"
+	DashboardVisualizationDonut            = "donut"
+	DashboardVisualizationBar              = "bar"
+	DashboardVisualizationTreemap          = "treemap"
+	dashboardOriginalLayoutVersion         = 1
+	dashboardFineLayoutVersion             = 2
+	dashboardCategoryOnlyLayoutVersion     = 3
+	dashboardChartLayoutVersion            = 4
+	dashboardBidirectionalLayoutVersion    = 5
+	dashboardVisualizationLayoutVersion    = 6
+	dashboardExpenseDisplayLayoutVersion   = 7
+	dashboardInitialGridColumns            = 36
+	dashboardMaximumGridColumns            = 20000
+	dashboardDefaultWidgetColumns          = 12
+	dashboardDefaultWidgetRows             = 10
+	dashboardMinimumWidgetColumns          = 9
+	dashboardMaximumWidgetColumns          = 36
+	dashboardMinimumWidgetRows             = 6
+	dashboardMaximumWidgetRows             = 24
+	dashboardMaximumGridRows               = 20000
 )
 
 var dashboardCategoryBreakdownWidgetIDPattern = regexp.MustCompile(
@@ -46,14 +52,15 @@ type DashboardLayout struct {
 
 // DashboardWidget describes the identity, type, position, and size of one dashboard widget.
 type DashboardWidget struct {
-	ID            string `json:"id"`
-	Type          string `json:"type"`
-	CategoryID    int64  `json:"categoryId,omitempty"`
-	Visualization string `json:"visualization,omitempty"`
-	X             int    `json:"x"`
-	Y             int    `json:"y"`
-	Columns       int    `json:"cols"`
-	Rows          int    `json:"rows"`
+	ID             string `json:"id"`
+	Type           string `json:"type"`
+	CategoryID     int64  `json:"categoryId,omitempty"`
+	ExpenseDisplay string `json:"expenseDisplay,omitempty"`
+	Visualization  string `json:"visualization,omitempty"`
+	X              int    `json:"x"`
+	Y              int    `json:"y"`
+	Columns        int    `json:"cols"`
+	Rows           int    `json:"rows"`
 }
 
 // GetDashboardLayout returns the saved layout reconciled with the budget's current
@@ -172,7 +179,9 @@ func reconcileAndValidateDashboardLayout(layout DashboardLayout, categoryIDs []i
 		layout.Version != dashboardFineLayoutVersion &&
 		layout.Version != dashboardCategoryOnlyLayoutVersion &&
 		layout.Version != dashboardChartLayoutVersion &&
-		layout.Version != dashboardBidirectionalLayoutVersion {
+		layout.Version != dashboardBidirectionalLayoutVersion &&
+		layout.Version != dashboardVisualizationLayoutVersion &&
+		layout.Version != dashboardExpenseDisplayLayoutVersion {
 		return nil, fmt.Errorf("%w: version must be %d", ErrInvalidDashboardLayout, DashboardLayoutVersion)
 	}
 
@@ -193,6 +202,14 @@ func reconcileAndValidateDashboardLayout(layout DashboardLayout, categoryIDs []i
 				return nil, fmt.Errorf("%w: invalid category widget", ErrInvalidDashboardLayout)
 			}
 
+			if layout.Version < dashboardExpenseDisplayLayoutVersion && widget.ExpenseDisplay == "" {
+				widget.ExpenseDisplay = DashboardExpenseDisplayTitleAmount
+			}
+
+			if !isDashboardExpenseDisplaySupported(widget.ExpenseDisplay) {
+				return nil, fmt.Errorf("%w: invalid category expense display", ErrInvalidDashboardLayout)
+			}
+
 			if !validCategoryIDs[widget.CategoryID] {
 				continue
 			}
@@ -201,15 +218,15 @@ func reconcileAndValidateDashboardLayout(layout DashboardLayout, categoryIDs []i
 				return nil, fmt.Errorf("%w: duplicate category widget", ErrInvalidDashboardLayout)
 			}
 		case DashboardWidgetTypeCategoryBreakdown:
-			if (layout.Version != DashboardLayoutVersion &&
-				layout.Version != dashboardBidirectionalLayoutVersion &&
-				layout.Version != dashboardChartLayoutVersion) ||
+			if layout.Version < dashboardChartLayoutVersion ||
 				widget.CategoryID != 0 ||
+				widget.ExpenseDisplay != "" ||
 				!dashboardCategoryBreakdownWidgetIDPattern.MatchString(widget.ID) {
 				return nil, fmt.Errorf("%w: invalid category breakdown widget", ErrInvalidDashboardLayout)
 			}
 
-			if layout.Version < DashboardLayoutVersion && widget.Visualization == "" {
+			if (layout.Version == dashboardChartLayoutVersion ||
+				layout.Version == dashboardBidirectionalLayoutVersion) && widget.Visualization == "" {
 				widget.Visualization = DashboardVisualizationPie
 			}
 
@@ -284,6 +301,18 @@ func reconcileAndValidateDashboardLayout(layout DashboardLayout, categoryIDs []i
 	return &DashboardLayout{Version: DashboardLayoutVersion, Widgets: widgets}, nil
 }
 
+func isDashboardExpenseDisplaySupported(expenseDisplay string) bool {
+	switch expenseDisplay {
+	case DashboardExpenseDisplayNumberOnly,
+		DashboardExpenseDisplayAmountOnly,
+		DashboardExpenseDisplayTitleAmount,
+		DashboardExpenseDisplayTitleAmountDate:
+		return true
+	default:
+		return false
+	}
+}
+
 func isDashboardVisualizationSupported(visualization string) bool {
 	switch visualization {
 	case DashboardVisualizationPie,
@@ -350,11 +379,12 @@ func dashboardWidgetsOverlap(first, second DashboardWidget) bool {
 
 func nextDashboardWidgetPosition(categoryID int64, widgets []DashboardWidget) (DashboardWidget, error) {
 	widget := DashboardWidget{
-		ID:         dashboardCategoryWidgetID(categoryID),
-		Type:       DashboardWidgetTypeCategoryExpenses,
-		CategoryID: categoryID,
-		Columns:    dashboardDefaultWidgetColumns,
-		Rows:       dashboardDefaultWidgetRows,
+		ID:             dashboardCategoryWidgetID(categoryID),
+		Type:           DashboardWidgetTypeCategoryExpenses,
+		CategoryID:     categoryID,
+		ExpenseDisplay: DashboardExpenseDisplayTitleAmount,
+		Columns:        dashboardDefaultWidgetColumns,
+		Rows:           dashboardDefaultWidgetRows,
 	}
 
 	for y := 0; y <= dashboardMaximumGridRows-dashboardDefaultWidgetRows; y++ {

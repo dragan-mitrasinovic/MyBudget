@@ -43,17 +43,36 @@
       <mat-list class="expense-list">
         @for (expense of expenses(); track expense.id) {
           <mat-list-item>
-            <span matListItemTitle class="expense-title">
-              {{ expense.description || category().name }}
-            </span>
-            <span matListItemLine class="expense-sub">{{ formatDate(expense.spentAt) }}</span>
+            @switch (expenseDisplay()) {
+              @case ('number-only') {
+                <span matListItemTitle class="expense-amount expense-number">
+                  {{ expense.amountMinor / 100 | number: '1.2-2' }}
+                </span>
+              }
+              @case ('amount-only') {
+                <span matListItemTitle class="expense-amount">
+                  {{ expense.amountMinor | money: currency() }}
+                </span>
+              }
+              @default {
+                <span matListItemTitle class="expense-title">
+                  {{ expense.description || category().name }}
+                </span>
+              }
+            }
+            @if (expenseDisplay() === 'title-amount-date') {
+              <span matListItemLine class="expense-sub">{{ formatDate(expense.spentAt) }}</span>
+            }
             <span matListItemMeta class="expense-meta">
-              <span class="expense-amount">
-                {{ expense.amountMinor | money: currency() }}
-              </span>
+              @if (expenseDisplay() !== 'number-only' && expenseDisplay() !== 'amount-only') {
+                <span class="expense-amount">
+                  {{ expense.amountMinor | money: currency() }}
+                </span>
+              }
               <button
                 mat-icon-button
                 type="button"
+                class="expense-actions"
                 [matMenuTriggerFor]="expenseMenu"
                 [matMenuTriggerData]="{ $implicit: expense }"
                 aria-label="Expense actions"
@@ -73,9 +92,36 @@
     <mat-icon>edit</mat-icon>
     <span>Rename category</span>
   </button>
+  <button mat-menu-item type="button" (click)="colorEditRequested.emit(category())">
+    <mat-icon>palette</mat-icon>
+    <span>Change color</span>
+  </button>
+  <button mat-menu-item type="button" [matMenuTriggerFor]="expenseDisplayMenu">
+    <mat-icon>format_line_spacing</mat-icon>
+    <span>Expense display</span>
+  </button>
   <button mat-menu-item type="button" (click)="deleteCategoryRequested.emit(category())">
     <mat-icon>delete</mat-icon>
     <span>Delete category</span>
+  </button>
+</mat-menu>
+
+<mat-menu #expenseDisplayMenu="matMenu">
+  <button mat-menu-item type="button" (click)="selectExpenseDisplay('number-only')">
+    <mat-icon>{{ expenseDisplay() === 'number-only' ? 'check' : '123' }}</mat-icon>
+    <span>Numbers only</span>
+  </button>
+  <button mat-menu-item type="button" (click)="selectExpenseDisplay('amount-only')">
+    <mat-icon>{{ expenseDisplay() === 'amount-only' ? 'check' : 'payments' }}</mat-icon>
+    <span>Amounts only</span>
+  </button>
+  <button mat-menu-item type="button" (click)="selectExpenseDisplay('title-amount')">
+    <mat-icon>{{ expenseDisplay() === 'title-amount' ? 'check' : 'title' }}</mat-icon>
+    <span>Titles and amounts</span>
+  </button>
+  <button mat-menu-item type="button" (click)="selectExpenseDisplay('title-amount-date')">
+    <mat-icon>{{ expenseDisplay() === 'title-amount-date' ? 'check' : 'event' }}</mat-icon>
+    <span>Titles, amounts and dates</span>
   </button>
 </mat-menu>
 

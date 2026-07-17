@@ -10,6 +10,7 @@ describe('createCategoryBreakdownWidget', () => {
       id: `category-expenses:${index + 1}`,
       type: categoryExpensesWidgetType,
       categoryId: index + 1,
+      expenseDisplay: 'title-amount',
       x: index * 12,
       y: 0,
       cols: 12,

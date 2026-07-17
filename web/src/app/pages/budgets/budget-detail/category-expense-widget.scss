@@ -85,6 +85,25 @@
   gap: var(--space-1);
 }
 
+.expense-actions {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.expense-list mat-list-item:hover .expense-actions,
+.expense-list mat-list-item:focus-within .expense-actions,
+.expense-actions[aria-expanded='true'] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .expense-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .expense-amount {
   font: var(--mat-sys-label-large);
   white-space: nowrap;

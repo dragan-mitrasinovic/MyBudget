@@ -35,6 +35,12 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Reveal each expense's actions only on hover or keyboard focus (2026-07-17)
+- [x] Added a currency-free numbers-only category expense display (2026-07-17)
+- [x] List category expenses oldest-to-newest so the newest item appears at the bottom (2026-07-17)
+- [x] Configurable per-category expense detail with amount-only, title-and-amount, and full date
+      views (2026-07-17)
+- [x] Change category colors from each category's dashboard actions menu (2026-07-16)
 - [x] Exposed category creation from the budget dashboard (2026-07-16)
 - [x] Resize dashboard widgets in both dimensions from any corner handle (2026-07-16)
 - [x] Eight persistent app styles spanning editorial, playful, technical, industrial, luxury, and

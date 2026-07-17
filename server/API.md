@@ -145,12 +145,13 @@ Expenses do not store or return `budgetId`; their budget is reached through thei
 
 ```json
 {
-  "version": 6,
+  "version": 8,
   "widgets": [
     {
       "id": "category-expenses:34",
       "type": "category-expenses",
       "categoryId": 34,
+      "expenseDisplay": "title-amount",
       "x": 0,
       "y": 0,
       "cols": 12,
@@ -169,14 +170,19 @@ Expenses do not store or return `budgetId`; their budget is reached through thei
 }
 ```
 
-Version 6 uses fixed 32-pixel rows and columns on a canvas that begins with a 36-column viewport
+Version 8 uses fixed 32-pixel rows and columns on a canvas that begins with a 36-column viewport
 and can extend to 20000 columns and 20000 rows. `x` and `y` are zero-based coordinates; `cols` and
 `rows` are the widget dimensions. A category expense widget's ID is always
-`category-expenses:{categoryId}`. A category breakdown widget has no `categoryId` and uses
+`category-expenses:{categoryId}`. Its `expenseDisplay` is `number-only`, `amount-only`,
+`title-amount`, or `title-amount-date`. `number-only` omits the currency symbol or code while
+`amount-only` retains localized currency formatting. A category breakdown widget has no
+`categoryId` and uses
 `category-breakdown:{uuid}`. Its `visualization` is `pie`, `donut`, `bar`, or `treemap`. The server
-accepts versions 1 through 5 and returns them upgraded to version 6. Version 1 used 12 columns and
+accepts versions 1 through 7 and returns them upgraded to version 8. Version 1 used 12 columns and
 64-pixel rows; version 2 used 72 columns and 16-pixel rows; versions 3 and 4 used 32-pixel geometry
-but limited the canvas to 36 columns; version 5 introduced the current bidirectional canvas.
+but limited the canvas to 36 columns; version 5 introduced the current bidirectional canvas;
+version 6 added configurable breakdown visualizations; version 7 added per-category expense
+display choices.
 
 ## Shared data rules
 
@@ -393,8 +399,9 @@ Errors:
 ## Dashboard endpoints
 
 Dashboard layouts belong to one budget and therefore transitively to its owner. Every current
-category has exactly one `category-expenses` widget in the response. Users may also add, move,
-resize, duplicate, and remove optional `category-breakdown` widgets.
+category has exactly one `category-expenses` widget in the response. Users may choose how much
+detail its expense rows show. They may also add, move, resize, duplicate, and remove optional
+`category-breakdown` widgets.
 
 A budget may have zero categories. In that state, an unsaved dashboard returns the current layout
 version with an empty `widgets` array. Optional breakdown widgets in an existing saved layout are
@@ -406,17 +413,21 @@ receive the first available default 12-by-10 position. This makes category creat
 safe even when a client is holding an older layout. Reconciliation returned by `GET` is not
 itself a database write.
 
-Version 6 validation rules:
+Version 8 validation rules:
 
-- `version` must be `6`. Versions `1` through `5` are accepted and upgraded in the response;
-  version-3 through version-5 geometry is unchanged.
+- `version` must be `8`. Versions `1` through `7` are accepted and upgraded in the response;
+  version-3 through version-7 geometry is unchanged.
 - A `category-expenses` widget must have a positive `categoryId`, use the exact derived ID, and be
-  the only widget for that category. It must omit `visualization`.
+  the only widget for that category. It must set `expenseDisplay` to `number-only`, `amount-only`,
+  `title-amount`, or `title-amount-date` and omit `visualization`.
 - A `category-breakdown` widget must omit `categoryId` and use a lowercase
   `category-breakdown:{uuid}` ID. It must set `visualization` to `pie`, `donut`, `bar`, or
-  `treemap`. Multiple widgets of this type are allowed when their IDs differ.
+  `treemap` and omit `expenseDisplay`. Multiple widgets of this type are allowed when their IDs
+  differ.
 - Version-4 and version-5 breakdown widgets that omit `visualization` are upgraded to `pie`; a
   supported value already present in a legacy document is preserved.
+- Version-1 through version-6 category widgets that omit `expenseDisplay` are upgraded to
+  `title-amount`; a supported value already present in a legacy document is preserved.
 - Unknown widget types and duplicate widget IDs are rejected.
 - `x` and `y` must be non-negative. `cols` must be 9-36, `rows` must be 6-24,
   `x + cols` and `y + rows` must not exceed 20000.
@@ -426,7 +437,8 @@ Version 6 validation rules:
 
 Returns the saved layout reconciled with the budget's current categories. When no layout has
 been saved, returns a deterministic default layout with category widgets placed left to right,
-then top to bottom. A budget with no categories returns `{ "version": 6, "widgets": [] }`.
+then top to bottom. New category widgets use `title-amount`. A budget with no categories returns
+`{ "version": 8, "widgets": [] }`.
 
 Success: `200 OK` with a Dashboard layout.
 

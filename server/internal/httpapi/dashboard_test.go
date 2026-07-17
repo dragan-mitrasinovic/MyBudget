@@ -41,8 +41,12 @@ func TestDashboardEndpointsLoadAndPersistLayout(t *testing.T) {
 	if len(layout.Widgets) != 1 {
 		t.Fatalf("widget count = %d, want 1", len(layout.Widgets))
 	}
+	if layout.Widgets[0].ExpenseDisplay != store.DashboardExpenseDisplayTitleAmount {
+		t.Fatalf("default expense display = %q, want %q", layout.Widgets[0].ExpenseDisplay, store.DashboardExpenseDisplayTitleAmount)
+	}
 
 	layout.Widgets[0].Y = 6
+	layout.Widgets[0].ExpenseDisplay = store.DashboardExpenseDisplayNumberOnly
 	layout.Widgets = append(layout.Widgets, store.DashboardWidget{
 		ID:            "category-breakdown:11111111-1111-4111-8111-111111111111",
 		Type:          store.DashboardWidgetTypeCategoryBreakdown,
@@ -79,6 +83,9 @@ func TestDashboardEndpointsLoadAndPersistLayout(t *testing.T) {
 
 	if persisted.Widgets[0].Y != 6 {
 		t.Errorf("persisted widget y = %d, want 6", persisted.Widgets[0].Y)
+	}
+	if persisted.Widgets[0].ExpenseDisplay != store.DashboardExpenseDisplayNumberOnly {
+		t.Errorf("persisted expense display = %q, want %q", persisted.Widgets[0].ExpenseDisplay, store.DashboardExpenseDisplayNumberOnly)
 	}
 
 	if len(persisted.Widgets) != 2 || persisted.Widgets[1].Type != store.DashboardWidgetTypeCategoryBreakdown {
@@ -121,7 +128,7 @@ func TestDashboardEndpointsRejectInvalidAndUnownedLayouts(t *testing.T) {
 	invalidRequest := httptest.NewRequest(
 		http.MethodPut,
 		path,
-		bytes.NewBufferString(`{"version":7,"widgets":[]}`),
+		bytes.NewBufferString(`{"version":9,"widgets":[]}`),
 	)
 	invalidRequest.Header.Set("Origin", testAppOrigin)
 	invalidRequest.AddCookie(&http.Cookie{Name: sessionCookieName, Value: ownerSessionID})

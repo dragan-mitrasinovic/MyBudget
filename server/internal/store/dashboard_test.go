@@ -130,6 +130,37 @@ func TestDashboardLayoutPersistsAndReconcilesCategoryChanges(t *testing.T) {
 	}
 }
 
+func TestDashboardLayoutPersistsExpenseDisplay(t *testing.T) {
+	st := openTestStore(t)
+	user := createStoreTestUser(t, st, "dashboard-owner")
+	budget := createStoreTestBudget(t, st, user.ID, "Household")
+	ctx := context.Background()
+	createDashboardTestCategory(t, st, user.ID, budget.ID)
+
+	layout, err := st.GetDashboardLayout(ctx, user.ID, budget.ID)
+	if err != nil {
+		t.Fatalf("get dashboard layout: %v", err)
+	}
+
+	if layout.Widgets[0].ExpenseDisplay != DashboardExpenseDisplayTitleAmount {
+		t.Fatalf("default expense display = %q, want %q", layout.Widgets[0].ExpenseDisplay, DashboardExpenseDisplayTitleAmount)
+	}
+
+	layout.Widgets[0].ExpenseDisplay = DashboardExpenseDisplayNumberOnly
+	if _, err := st.SaveDashboardLayout(ctx, user.ID, budget.ID, *layout); err != nil {
+		t.Fatalf("save dashboard layout: %v", err)
+	}
+
+	persisted, err := st.GetDashboardLayout(ctx, user.ID, budget.ID)
+	if err != nil {
+		t.Fatalf("get persisted dashboard layout: %v", err)
+	}
+
+	if persisted.Widgets[0].ExpenseDisplay != DashboardExpenseDisplayNumberOnly {
+		t.Errorf("persisted expense display = %q, want %q", persisted.Widgets[0].ExpenseDisplay, DashboardExpenseDisplayNumberOnly)
+	}
+}
+
 func TestDashboardLayoutPersistsMultipleCategoryBreakdownWidgets(t *testing.T) {
 	st := openTestStore(t)
 	user := createStoreTestUser(t, st, "dashboard-owner")
@@ -224,11 +255,12 @@ func TestDashboardLayoutAcceptsAllSupportedVisualizations(t *testing.T) {
 			Version: DashboardLayoutVersion,
 			Widgets: []DashboardWidget{
 				{
-					ID:         dashboardCategoryWidgetID(1),
-					Type:       DashboardWidgetTypeCategoryExpenses,
-					CategoryID: 1,
-					Columns:    12,
-					Rows:       10,
+					ID:             dashboardCategoryWidgetID(1),
+					Type:           DashboardWidgetTypeCategoryExpenses,
+					CategoryID:     1,
+					ExpenseDisplay: DashboardExpenseDisplayTitleAmount,
+					Columns:        12,
+					Rows:           10,
 				},
 				{
 					ID:            fmt.Sprintf("category-breakdown:%08d-1111-4111-8111-111111111111", index+1),
@@ -499,6 +531,91 @@ func TestGetDashboardLayoutUpgradesVersionFiveWithExplicitVisualization(t *testi
 	}
 }
 
+func TestGetDashboardLayoutUpgradesVersionSixWithDefaultExpenseDisplay(t *testing.T) {
+	st := openTestStore(t)
+	user := createStoreTestUser(t, st, "dashboard-owner")
+	budget := createStoreTestBudget(t, st, user.ID, "Household")
+	ctx := context.Background()
+	category := createDashboardTestCategory(t, st, user.ID, budget.ID)
+
+	legacyLayout := DashboardLayout{
+		Version: dashboardVisualizationLayoutVersion,
+		Widgets: []DashboardWidget{
+			{
+				ID:         dashboardCategoryWidgetID(category.ID),
+				Type:       DashboardWidgetTypeCategoryExpenses,
+				CategoryID: category.ID,
+				Columns:    12,
+				Rows:       10,
+			},
+		},
+	}
+	layoutJSON, err := json.Marshal(legacyLayout)
+	if err != nil {
+		t.Fatalf("encode version six layout: %v", err)
+	}
+
+	const insert = `
+		INSERT INTO dashboard_layouts (budget_id, version, layout_json, updated_at)
+		VALUES (?, ?, ?, '2026-07-17T00:00:00Z')`
+	if _, err := st.db.ExecContext(ctx, insert, budget.ID, legacyLayout.Version, string(layoutJSON)); err != nil {
+		t.Fatalf("insert version six layout: %v", err)
+	}
+
+	upgraded, err := st.GetDashboardLayout(ctx, user.ID, budget.ID)
+	if err != nil {
+		t.Fatalf("get upgraded layout: %v", err)
+	}
+
+	if upgraded.Version != DashboardLayoutVersion ||
+		upgraded.Widgets[0].ExpenseDisplay != DashboardExpenseDisplayTitleAmount {
+		t.Errorf("upgraded layout = %#v, want current version with title and amount display", upgraded)
+	}
+}
+
+func TestGetDashboardLayoutUpgradesVersionSevenWithExpenseDisplay(t *testing.T) {
+	st := openTestStore(t)
+	user := createStoreTestUser(t, st, "dashboard-owner")
+	budget := createStoreTestBudget(t, st, user.ID, "Household")
+	ctx := context.Background()
+	category := createDashboardTestCategory(t, st, user.ID, budget.ID)
+
+	legacyLayout := DashboardLayout{
+		Version: dashboardExpenseDisplayLayoutVersion,
+		Widgets: []DashboardWidget{
+			{
+				ID:             dashboardCategoryWidgetID(category.ID),
+				Type:           DashboardWidgetTypeCategoryExpenses,
+				CategoryID:     category.ID,
+				ExpenseDisplay: DashboardExpenseDisplayAmountOnly,
+				Columns:        12,
+				Rows:           10,
+			},
+		},
+	}
+	layoutJSON, err := json.Marshal(legacyLayout)
+	if err != nil {
+		t.Fatalf("encode version seven layout: %v", err)
+	}
+
+	const insert = `
+		INSERT INTO dashboard_layouts (budget_id, version, layout_json, updated_at)
+		VALUES (?, ?, ?, '2026-07-17T00:00:00Z')`
+	if _, err := st.db.ExecContext(ctx, insert, budget.ID, legacyLayout.Version, string(layoutJSON)); err != nil {
+		t.Fatalf("insert version seven layout: %v", err)
+	}
+
+	upgraded, err := st.GetDashboardLayout(ctx, user.ID, budget.ID)
+	if err != nil {
+		t.Fatalf("get upgraded layout: %v", err)
+	}
+
+	if upgraded.Version != DashboardLayoutVersion ||
+		upgraded.Widgets[0].ExpenseDisplay != DashboardExpenseDisplayAmountOnly {
+		t.Errorf("upgraded layout = %#v, want current version preserving amount-only display", upgraded)
+	}
+}
+
 func TestSaveDashboardLayoutValidatesOwnershipAndGeometry(t *testing.T) {
 	st := openTestStore(t)
 	owner := createStoreTestUser(t, st, "dashboard-owner")
@@ -608,6 +725,57 @@ func TestSaveDashboardLayoutValidatesVisualizationFields(t *testing.T) {
 	candidate.Widgets[0].Visualization = DashboardVisualizationPie
 	if _, err := st.SaveDashboardLayout(ctx, user.ID, budget.ID, candidate); !errors.Is(err, ErrInvalidDashboardLayout) {
 		t.Errorf("category visualization error = %v, want ErrInvalidDashboardLayout", err)
+	}
+}
+
+func TestSaveDashboardLayoutValidatesExpenseDisplayFields(t *testing.T) {
+	st := openTestStore(t)
+	user := createStoreTestUser(t, st, "dashboard-owner")
+	budget := createStoreTestBudget(t, st, user.ID, "Household")
+	ctx := context.Background()
+	createDashboardTestCategory(t, st, user.ID, budget.ID)
+
+	layout, err := st.GetDashboardLayout(ctx, user.ID, budget.ID)
+	if err != nil {
+		t.Fatalf("get layout: %v", err)
+	}
+
+	for _, expenseDisplay := range []string{
+		DashboardExpenseDisplayNumberOnly,
+		DashboardExpenseDisplayAmountOnly,
+		DashboardExpenseDisplayTitleAmount,
+		DashboardExpenseDisplayTitleAmountDate,
+	} {
+		candidate := *layout
+		candidate.Widgets = append([]DashboardWidget{}, layout.Widgets...)
+		candidate.Widgets[0].ExpenseDisplay = expenseDisplay
+		if _, err := st.SaveDashboardLayout(ctx, user.ID, budget.ID, candidate); err != nil {
+			t.Errorf("save %q expense display: %v", expenseDisplay, err)
+		}
+	}
+
+	for _, expenseDisplay := range []string{"", "description-only"} {
+		candidate := *layout
+		candidate.Widgets = append([]DashboardWidget{}, layout.Widgets...)
+		candidate.Widgets[0].ExpenseDisplay = expenseDisplay
+		if _, err := st.SaveDashboardLayout(ctx, user.ID, budget.ID, candidate); !errors.Is(err, ErrInvalidDashboardLayout) {
+			t.Errorf("save %q expense display error = %v, want ErrInvalidDashboardLayout", expenseDisplay, err)
+		}
+	}
+
+	candidate := *layout
+	candidate.Widgets = append([]DashboardWidget{}, layout.Widgets...)
+	candidate.Widgets = append(candidate.Widgets, DashboardWidget{
+		ID:             "category-breakdown:11111111-1111-4111-8111-111111111111",
+		Type:           DashboardWidgetTypeCategoryBreakdown,
+		ExpenseDisplay: DashboardExpenseDisplayAmountOnly,
+		Visualization:  DashboardVisualizationPie,
+		Y:              10,
+		Columns:        18,
+		Rows:           12,
+	})
+	if _, err := st.SaveDashboardLayout(ctx, user.ID, budget.ID, candidate); !errors.Is(err, ErrInvalidDashboardLayout) {
+		t.Errorf("chart expense display error = %v, want ErrInvalidDashboardLayout", err)
 	}
 }
 
