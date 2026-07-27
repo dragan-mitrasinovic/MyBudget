@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideNativeDateAdapter } from '@angular/material/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { Category } from '../../core/budgets/category.models';
+import { provideDayFirstDateAdapter } from '../../core/date/day-first-date-adapter';
 import { Expense, ExpenseInput } from '../../core/budgets/expense.models';
 import { ExpenseService } from '../../core/budgets/expense.service';
 import { ExpenseDialogData, ExpenseFormDialog } from './expense-form-dialog';
@@ -83,6 +83,42 @@ describe('ExpenseFormDialog', () => {
     });
   });
 
+  it('displays and parses day/month/year while submitting an ISO date', async () => {
+    const { component, fixture, update } = await setup(existingExpense);
+    const dateInput = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      'input[formControlName="date"]',
+    );
+    expect(dateInput?.value).toBe('11/07/2026');
+
+    dateInput!.value = '24/07/2026';
+    dateInput!.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await component.submit();
+
+    expect(update).toHaveBeenCalledWith(
+      12,
+      existingExpense.id,
+      expect.objectContaining({ spentAt: '2026-07-24' }),
+    );
+  });
+
+  it('rejects month/day/year text', async () => {
+    const { component, fixture, update } = await setup(existingExpense);
+    const dateInput = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      'input[formControlName="date"]',
+    );
+
+    dateInput!.value = '07/24/2026';
+    dateInput!.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await component.submit();
+    fixture.detectChanges();
+
+    expect(update).not.toHaveBeenCalled();
+    expect(component.form.controls.date.hasError('matDatepickerParse')).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Enter a valid date as DD/MM/YYYY');
+  });
+
   it('clears amount and description after saving another expense', async () => {
     const { component, create, close } = await setup();
     const date = new Date(2026, 6, 11);
@@ -160,7 +196,7 @@ describe('ExpenseFormDialog', () => {
     await TestBed.configureTestingModule({
       imports: [ExpenseFormDialog],
       providers: [
-        provideNativeDateAdapter(),
+        provideDayFirstDateAdapter(),
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: { close } },
         { provide: ExpenseService, useValue: { create, update } },

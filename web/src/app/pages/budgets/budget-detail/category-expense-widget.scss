@@ -2,6 +2,7 @@
   display: block;
   height: 100%;
   min-width: 0;
+  container-type: inline-size;
 }
 
 .category-widget {
@@ -60,7 +61,25 @@
 }
 
 .expense-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--space-3);
   padding: 0;
+}
+
+.expense-row {
+  min-width: 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.expense-row:focus-within {
+  background-color: var(--mat-sys-surface-container-low);
+}
+
+@media (hover: hover) {
+  .expense-row:hover {
+    background-color: var(--mat-sys-surface-container-low);
+  }
 }
 
 .empty-hint {
@@ -90,8 +109,8 @@
   pointer-events: none;
 }
 
-.expense-list mat-list-item:hover .expense-actions,
-.expense-list mat-list-item:focus-within .expense-actions,
+.expense-row:hover .expense-actions,
+.expense-row:focus-within .expense-actions,
 .expense-actions[aria-expanded='true'] {
   opacity: 1;
   pointer-events: auto;
@@ -107,4 +126,78 @@
 .expense-amount {
   font: var(--mat-sys-label-large);
   white-space: nowrap;
+}
+
+.selected-display-option {
+  color: var(--mat-sys-on-secondary-container);
+  background-color: var(--mat-sys-secondary-container);
+}
+
+.selected-display-option mat-icon {
+  color: var(--mat-sys-on-secondary-container);
+}
+
+@container (width >= 20rem) {
+  .expense-list[data-display='number-only'],
+  .expense-list[data-display='amount-only'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (width >= 28rem) {
+  .expense-list[data-display='number-only'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (width >= 32rem) {
+  .expense-list[data-display='amount-only'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (width >= 36rem) {
+  .expense-list[data-display='number-only'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container (width >= 44rem) {
+  .expense-list[data-display='amount-only'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .expense-list[data-display='title-amount'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (width >= 48rem) {
+  .expense-list[data-display='number-only'] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@container (width >= 56rem) {
+  .expense-list[data-display='title-amount-date'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (width >= 58rem) {
+  .expense-list[data-display='amount-only'] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@container (width >= 60rem) {
+  .expense-list[data-display='number-only'] {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@container (width >= 64rem) {
+  .expense-list[data-display='title-amount'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }

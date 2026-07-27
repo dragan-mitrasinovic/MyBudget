@@ -35,6 +35,10 @@ _Unsorted, capture-anything. Groom later._
 
 ## Done
 
+- [x] Use strict day/month/year entry in the expense date field (2026-07-25)
+- [x] Clearly highlight and announce the active category expense display choice (2026-07-17)
+- [x] Omit the `.00` suffix from whole values in numbers-only expense display (2026-07-17)
+- [x] Adapt long category expense lists into responsive columns with row separators (2026-07-17)
 - [x] Reveal each expense's actions only on hover or keyboard focus (2026-07-17)
 - [x] Added a currency-free numbers-only category expense display (2026-07-17)
 - [x] List category expenses oldest-to-newest so the newest item appears at the bottom (2026-07-17)

@@ -40,13 +40,16 @@
     @if (expenses().length === 0) {
       <p class="empty-hint">No expenses in this category.</p>
     } @else {
-      <mat-list class="expense-list">
+      <mat-list class="expense-list" [attr.data-display]="expenseDisplay()">
         @for (expense of expenses(); track expense.id) {
-          <mat-list-item>
+          <mat-list-item class="expense-row">
             @switch (expenseDisplay()) {
               @case ('number-only') {
                 <span matListItemTitle class="expense-amount expense-number">
-                  {{ expense.amountMinor / 100 | number: '1.2-2' }}
+                  {{
+                    expense.amountMinor / 100
+                      | number: (expense.amountMinor % 100 === 0 ? '1.0-0' : '1.2-2')
+                  }}
                 </span>
               }
               @case ('amount-only') {
@@ -107,20 +110,48 @@
 </mat-menu>
 
 <mat-menu #expenseDisplayMenu="matMenu">
-  <button mat-menu-item type="button" (click)="selectExpenseDisplay('number-only')">
-    <mat-icon>{{ expenseDisplay() === 'number-only' ? 'check' : '123' }}</mat-icon>
+  <button
+    mat-menu-item
+    type="button"
+    role="menuitemradio"
+    [class.selected-display-option]="expenseDisplay() === 'number-only'"
+    [attr.aria-checked]="expenseDisplay() === 'number-only'"
+    (click)="selectExpenseDisplay('number-only')"
+  >
+    <mat-icon>{{ expenseDisplay() === 'number-only' ? 'check_circle' : '123' }}</mat-icon>
     <span>Numbers only</span>
   </button>
-  <button mat-menu-item type="button" (click)="selectExpenseDisplay('amount-only')">
-    <mat-icon>{{ expenseDisplay() === 'amount-only' ? 'check' : 'payments' }}</mat-icon>
+  <button
+    mat-menu-item
+    type="button"
+    role="menuitemradio"
+    [class.selected-display-option]="expenseDisplay() === 'amount-only'"
+    [attr.aria-checked]="expenseDisplay() === 'amount-only'"
+    (click)="selectExpenseDisplay('amount-only')"
+  >
+    <mat-icon>{{ expenseDisplay() === 'amount-only' ? 'check_circle' : 'payments' }}</mat-icon>
     <span>Amounts only</span>
   </button>
-  <button mat-menu-item type="button" (click)="selectExpenseDisplay('title-amount')">
-    <mat-icon>{{ expenseDisplay() === 'title-amount' ? 'check' : 'title' }}</mat-icon>
+  <button
+    mat-menu-item
+    type="button"
+    role="menuitemradio"
+    [class.selected-display-option]="expenseDisplay() === 'title-amount'"
+    [attr.aria-checked]="expenseDisplay() === 'title-amount'"
+    (click)="selectExpenseDisplay('title-amount')"
+  >
+    <mat-icon>{{ expenseDisplay() === 'title-amount' ? 'check_circle' : 'title' }}</mat-icon>
     <span>Titles and amounts</span>
   </button>
-  <button mat-menu-item type="button" (click)="selectExpenseDisplay('title-amount-date')">
-    <mat-icon>{{ expenseDisplay() === 'title-amount-date' ? 'check' : 'event' }}</mat-icon>
+  <button
+    mat-menu-item
+    type="button"
+    role="menuitemradio"
+    [class.selected-display-option]="expenseDisplay() === 'title-amount-date'"
+    [attr.aria-checked]="expenseDisplay() === 'title-amount-date'"
+    (click)="selectExpenseDisplay('title-amount-date')"
+  >
+    <mat-icon>{{ expenseDisplay() === 'title-amount-date' ? 'check_circle' : 'event' }}</mat-icon>
     <span>Titles, amounts and dates</span>
   </button>
 </mat-menu>

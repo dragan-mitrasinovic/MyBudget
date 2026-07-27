@@ -45,9 +45,14 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Date</mat-label>
-      <input matInput [matDatepicker]="picker" formControlName="date" />
+      <input matInput [matDatepicker]="picker" formControlName="date" placeholder="DD/MM/YYYY" />
       <mat-datepicker-toggle matIconSuffix [for]="picker" />
       <mat-datepicker #picker />
+      @if (form.controls.date.hasError('matDatepickerParse')) {
+        <mat-error>Enter a valid date as DD/MM/YYYY</mat-error>
+      } @else if (form.controls.date.hasError('required')) {
+        <mat-error>Date is required</mat-error>
+      }
     </mat-form-field>
   </mat-dialog-content>
 

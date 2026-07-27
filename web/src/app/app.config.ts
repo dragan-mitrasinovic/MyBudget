@@ -7,7 +7,6 @@ import {
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
-import { provideNativeDateAdapter } from '@angular/material/core';
 import {
   GoogleLoginProvider,
   SOCIAL_AUTH_CONFIG,
@@ -16,6 +15,7 @@ import {
 
 import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
+import { provideDayFirstDateAdapter } from './core/date/day-first-date-adapter';
 import { AppThemeService } from './core/theme/app-theme.service';
 import { ThemeService } from './core/theme/theme.service';
 import { environment } from '../environments/environment';
@@ -26,7 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withFetch()),
-    provideNativeDateAdapter(),
+    provideDayFirstDateAdapter(),
     provideAppInitializer(() => inject(AppThemeService).initialize()),
     provideAppInitializer(() => inject(ThemeService).initialize()),
     provideAppInitializer(() => inject(AuthService).init()),
